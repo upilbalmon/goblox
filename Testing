@@ -5,9 +5,7 @@ local TeleportButton = Instance.new("TextButton")
 local ReturnButton = Instance.new("TextButton")
 local CloseButton = Instance.new("TextButton")
 local MinimizeButton = Instance.new("TextButton")
-local XBox = Instance.new("TextBox")
-local YBox = Instance.new("TextBox")
-local ZBox = Instance.new("TextBox")
+local CoordBox = Instance.new("TextBox")
 local isMinimized = false
 local originalPosition = nil
 
@@ -22,45 +20,31 @@ end
 ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
 
 Frame.Parent = ScreenGui
-Frame.Size = UDim2.new(0, 220, 0, 180)
+Frame.Size = UDim2.new(0, 220, 0, 150)
 Frame.Position = UDim2.new(0, 10, 0, 10)
 Frame.BackgroundTransparency = 0.5
 Frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 Frame.Active = true
 Frame.Draggable = true
 
--- Input X
-XBox.Parent = Frame
-XBox.PlaceholderText = "X"
-XBox.Position = UDim2.new(0, 10, 0, 30)
-XBox.Size = UDim2.new(0, 200, 0, 25)
-styleElement(XBox)
-
--- Input Y
-YBox.Parent = Frame
-YBox.PlaceholderText = "Y"
-YBox.Position = UDim2.new(0, 10, 0, 60)
-YBox.Size = UDim2.new(0, 200, 0, 25)
-styleElement(YBox)
-
--- Input Z
-ZBox.Parent = Frame
-ZBox.PlaceholderText = "Z"
-ZBox.Position = UDim2.new(0, 10, 0, 90)
-ZBox.Size = UDim2.new(0, 200, 0, 25)
-styleElement(ZBox)
+-- TextBox Koordinat
+CoordBox.Parent = Frame
+CoordBox.PlaceholderText = "Masukkan koordinat (x,y,z)"
+CoordBox.Position = UDim2.new(0, 10, 0, 30)
+CoordBox.Size = UDim2.new(0, 200, 0, 25)
+styleElement(CoordBox)
 
 -- Tombol Teleport
 TeleportButton.Parent = Frame
 TeleportButton.Text = "Teleport"
-TeleportButton.Position = UDim2.new(0, 10, 0, 125)
+TeleportButton.Position = UDim2.new(0, 10, 0, 70)
 TeleportButton.Size = UDim2.new(0, 95, 0, 25)
 styleElement(TeleportButton)
 
 -- Tombol Kembali
 ReturnButton.Parent = Frame
 ReturnButton.Text = "Kembali"
-ReturnButton.Position = UDim2.new(0, 115, 0, 125)
+ReturnButton.Position = UDim2.new(0, 115, 0, 70)
 ReturnButton.Size = UDim2.new(0, 95, 0, 25)
 styleElement(ReturnButton)
 
@@ -95,17 +79,18 @@ end)
 
 -- Fungsi teleport
 TeleportButton.MouseButton1Click:Connect(function()
-    local x = tonumber(XBox.Text)
-    local y = tonumber(YBox.Text)
-    local z = tonumber(ZBox.Text)
+    local input = CoordBox.Text
+    local x, y, z = string.match(input, "^%s*(-?%d+%.?%d*)%s*,%s*(-?%d+%.?%d*)%s*,%s*(-?%d+%.?%d*)%s*$")
 
     if x and y and z then
         local player = game.Players.LocalPlayer
         local character = player.Character or player.CharacterAdded:Wait()
         if character.PrimaryPart then
             originalPosition = character.PrimaryPart.Position
-            character:SetPrimaryPartCFrame(CFrame.new(x, y, z))
+            character:SetPrimaryPartCFrame(CFrame.new(tonumber(x), tonumber(y), tonumber(z)))
         end
+    else
+        CoordBox.Text = "Format salah! Gunakan x,y,z"
     end
 end)
 

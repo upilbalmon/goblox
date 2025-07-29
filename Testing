@@ -1,0 +1,121 @@
+-- Buat GUI
+local ScreenGui = Instance.new("ScreenGui")
+local Frame = Instance.new("Frame")
+local TeleportButton = Instance.new("TextButton")
+local ReturnButton = Instance.new("TextButton")
+local CloseButton = Instance.new("TextButton")
+local MinimizeButton = Instance.new("TextButton")
+local XBox = Instance.new("TextBox")
+local YBox = Instance.new("TextBox")
+local ZBox = Instance.new("TextBox")
+local isMinimized = false
+local originalPosition = nil
+
+-- Styling GUI Transparan
+local function styleElement(el)
+    el.BackgroundTransparency = 0.7
+    el.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    el.TextColor3 = Color3.fromRGB(255, 255, 255)
+    el.BorderSizePixel = 0
+end
+
+ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+
+Frame.Parent = ScreenGui
+Frame.Size = UDim2.new(0, 220, 0, 180)
+Frame.Position = UDim2.new(0, 10, 0, 10)
+Frame.BackgroundTransparency = 0.5
+Frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+Frame.Active = true
+Frame.Draggable = true
+
+-- Input X
+XBox.Parent = Frame
+XBox.PlaceholderText = "X"
+XBox.Position = UDim2.new(0, 10, 0, 30)
+XBox.Size = UDim2.new(0, 200, 0, 25)
+styleElement(XBox)
+
+-- Input Y
+YBox.Parent = Frame
+YBox.PlaceholderText = "Y"
+YBox.Position = UDim2.new(0, 10, 0, 60)
+YBox.Size = UDim2.new(0, 200, 0, 25)
+styleElement(YBox)
+
+-- Input Z
+ZBox.Parent = Frame
+ZBox.PlaceholderText = "Z"
+ZBox.Position = UDim2.new(0, 10, 0, 90)
+ZBox.Size = UDim2.new(0, 200, 0, 25)
+styleElement(ZBox)
+
+-- Tombol Teleport
+TeleportButton.Parent = Frame
+TeleportButton.Text = "Teleport"
+TeleportButton.Position = UDim2.new(0, 10, 0, 125)
+TeleportButton.Size = UDim2.new(0, 95, 0, 25)
+styleElement(TeleportButton)
+
+-- Tombol Kembali
+ReturnButton.Parent = Frame
+ReturnButton.Text = "Kembali"
+ReturnButton.Position = UDim2.new(0, 115, 0, 125)
+ReturnButton.Size = UDim2.new(0, 95, 0, 25)
+styleElement(ReturnButton)
+
+-- Tombol Close
+CloseButton.Parent = Frame
+CloseButton.Text = "X"
+CloseButton.Size = UDim2.new(0, 20, 0, 20)
+CloseButton.Position = UDim2.new(1, -25, 0, 5)
+styleElement(CloseButton)
+
+CloseButton.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+end)
+
+-- Tombol Minimize
+MinimizeButton.Parent = Frame
+MinimizeButton.Text = "-"
+MinimizeButton.Size = UDim2.new(0, 20, 0, 20)
+MinimizeButton.Position = UDim2.new(1, -50, 0, 5)
+styleElement(MinimizeButton)
+
+MinimizeButton.MouseButton1Click:Connect(function()
+    isMinimized = not isMinimized
+    for _, child in pairs(Frame:GetChildren()) do
+        if child:IsA("TextBox") or child:IsA("TextButton") then
+            if child ~= MinimizeButton and child ~= CloseButton then
+                child.Visible = not isMinimized
+            end
+        end
+    end
+end)
+
+-- Fungsi teleport
+TeleportButton.MouseButton1Click:Connect(function()
+    local x = tonumber(XBox.Text)
+    local y = tonumber(YBox.Text)
+    local z = tonumber(ZBox.Text)
+
+    if x and y and z then
+        local player = game.Players.LocalPlayer
+        local character = player.Character or player.CharacterAdded:Wait()
+        if character.PrimaryPart then
+            originalPosition = character.PrimaryPart.Position
+            character:SetPrimaryPartCFrame(CFrame.new(x, y, z))
+        end
+    end
+end)
+
+-- Fungsi kembali
+ReturnButton.MouseButton1Click:Connect(function()
+    if originalPosition then
+        local player = game.Players.LocalPlayer
+        local character = player.Character or player.CharacterAdded:Wait()
+        if character.PrimaryPart then
+            character:SetPrimaryPartCFrame(CFrame.new(originalPosition))
+        end
+    end
+end)

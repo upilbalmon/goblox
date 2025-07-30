@@ -2,7 +2,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local remote = ReplicatedStorage:WaitForChild("BLINK_UNRELIABLE_REMOTE")
 
 local args = {
-    buffer.fromstring("\n\000\000\000\224\239\202\145@\000\000\000 \198D\b@"),
+    buffer.fromstring("\022\n\000\000\000World1Egg3"),
     {}
 }
 

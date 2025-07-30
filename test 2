@@ -6,7 +6,193 @@ local TeleportButton = Instance.new("TextButton")
 local ReturnButton = Instance.new("TextButton")
 local GetLocButton = Instance.new("TextButton")
 local CloseButton = Instance.new("TextButton")
+local MinimizeButton = Instance.new-- Buat GUI
+local ScreenGui = Instance.new("ScreenGui")
+local Frame = Instance.new("Frame")
+local XBox = Instance.new("TextBox")
+local TeleportButton = Instance.new("TextButton")
+local ReturnButton = Instance.new("TextButton")
+local GetLocButton = Instance.new("TextButton")
+local CloseButton = Instance.new("TextButton")
 local MinimizeButton = Instance.new("TextButton")
+local SaveButton = Instance.new("TextButton")
+local BookmarkList = Instance.new("Frame")
+local Layout = Instance.new("UIListLayout")
+local isMinimized = false
+local originalPosition = nil
+local bookmarks = {}
+
+-- Styling GUI Transparan
+local function styleElement(el)
+    el.BackgroundTransparency = 0.7
+    el.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    el.TextColor3 = Color3.fromRGB(255, 255, 255)
+    el.BorderSizePixel = 0
+end
+
+ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+
+Frame.Parent = ScreenGui
+Frame.Size = UDim2.new(0, 240, 0, 340)
+Frame.Position = UDim2.new(0, 10, 0, 10)
+Frame.BackgroundTransparency = 0.5
+Frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+Frame.Active = true
+Frame.Draggable = true
+
+-- TextBox Gabungan
+XBox.Parent = Frame
+XBox.PlaceholderText = "Nama,X,Y,Z"
+XBox.Position = UDim2.new(0, 10, 0, 30)
+XBox.Size = UDim2.new(0, 220, 0, 25)
+styleElement(XBox)
+
+-- Tombol Teleport
+TeleportButton.Parent = Frame
+TeleportButton.Text = "Teleport"
+TeleportButton.Position = UDim2.new(0, 10, 0, 60)
+TeleportButton.Size = UDim2.new(0, 70, 0, 25)
+styleElement(TeleportButton)
+
+-- Tombol Kembali
+ReturnButton.Parent = Frame
+ReturnButton.Text = "Kembali"
+ReturnButton.Position = UDim2.new(0, 90, 0, 60)
+ReturnButton.Size = UDim2.new(0, 70, 0, 25)
+styleElement(ReturnButton)
+
+-- Tombol GetLoc
+GetLocButton.Parent = Frame
+GetLocButton.Text = "GetLoc"
+GetLocButton.TextSize = 12
+GetLocButton.Position = UDim2.new(0, 170, 0, 60)
+GetLocButton.Size = UDim2.new(0, 60, 0, 25)
+styleElement(GetLocButton)
+
+-- Tombol Simpan
+SaveButton.Parent = Frame
+SaveButton.Text = "Simpan"
+SaveButton.Position = UDim2.new(0, 10, 0, 95)
+SaveButton.Size = UDim2.new(0, 220, 0, 25)
+styleElement(SaveButton)
+
+-- Daftar Bookmark
+BookmarkList.Parent = Frame
+BookmarkList.Position = UDim2.new(0, 10, 0, 130)
+BookmarkList.Size = UDim2.new(0, 220, 0, 160)
+BookmarkList.BackgroundTransparency = 0.7
+BookmarkList.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+Layout.Parent = BookmarkList
+Layout.SortOrder = Enum.SortOrder.LayoutOrder
+
+-- Tombol Close
+CloseButton.Parent = Frame
+CloseButton.Text = "X"
+CloseButton.Size = UDim2.new(0, 20, 0, 20)
+CloseButton.Position = UDim2.new(1, -25, 0, 5)
+styleElement(CloseButton)
+
+CloseButton.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+end)
+
+-- Tombol Minimize
+MinimizeButton.Parent = Frame
+MinimizeButton.Text = "-"
+MinimizeButton.Size = UDim2.new(0, 20, 0, 20)
+MinimizeButton.Position = UDim2.new(1, -50, 0, 5)
+styleElement(MinimizeButton)
+
+MinimizeButton.MouseButton1Click:Connect(function()
+    isMinimized = not isMinimized
+    for _, child in pairs(Frame:GetChildren()) do
+        if child:IsA("TextBox") or child:IsA("TextButton") or child:IsA("Frame") then
+            if child ~= MinimizeButton and child ~= CloseButton then
+                child.Visible = not isMinimized
+            end
+        end
+    end
+end)
+
+-- Parsing input koordinat
+local function parseCoordinates(input)
+    local parts = string.split(input, ",")
+    if #parts == 4 then
+        local name = parts[1]
+        local x = tonumber(parts[2])
+        local y = tonumber(parts[3])
+        local z = tonumber(parts[4])
+        if x and y and z then
+            return name, Vector3.new(x, y, z)
+        end
+    end
+    return nil, nil
+end
+
+-- Fungsi Teleport
+TeleportButton.MouseButton1Click:Connect(function()
+    local _, coords = parseCoordinates(XBox.Text)
+    if coords then
+        local player = game.Players.LocalPlayer
+        local character = player.Character or player.CharacterAdded:Wait()
+        if character.PrimaryPart then
+            originalPosition = character.PrimaryPart.Position
+            character:SetPrimaryPartCFrame(CFrame.new(coords))
+        end
+    end
+end)
+
+-- Fungsi Kembali
+ReturnButton.MouseButton1Click:Connect(function()
+    if originalPosition then
+        local player = game.Players.LocalPlayer
+        local character = player.Character or player.CharacterAdded:Wait()
+        if character.PrimaryPart then
+            character:SetPrimaryPartCFrame(CFrame.new(originalPosition))
+        end
+    end
+end)
+
+-- Fungsi GetLoc
+GetLocButton.MouseButton1Click:Connect(function()
+    local player = game.Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
+    if character.PrimaryPart then
+        local pos = character.PrimaryPart.Position
+        local formatted = "Pos," .. math.floor(pos.X) .. "," .. math.floor(pos.Y) .. "," .. math.floor(pos.Z)
+        XBox.Text = formatted
+        if setclipboard then setclipboard(formatted) end
+    end
+end)
+
+-- Fungsi Simpan Bookmark
+SaveButton.MouseButton1Click:Connect(function()
+    local name, coords = parseCoordinates(XBox.Text)
+    if name and coords then
+        bookmarks[name] = coords
+        local button = Instance.new("TextButton")
+        button.Text = name
+        button.Size = UDim2.new(1, 0, 0, 25)
+        button.BackgroundTransparency = 0.6
+        button.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+        button.TextColor3 = Color3.fromRGB(255,255,255)
+        button.Parent = BookmarkList
+
+        button.MouseButton1Click:Connect(function()
+            -- Teleport dan salin ke textbox
+            local player = game.Players.LocalPlayer
+            local character = player.Character or player.CharacterAdded:Wait()
+            if character.PrimaryPart then
+                character:SetPrimaryPartCFrame(CFrame.new(coords))
+            end
+            local formatted = string.format("%s,%d,%d,%d", name, coords.X, coords.Y, coords.Z)
+            XBox.Text = formatted
+            if setclipboard then setclipboard(formatted) end
+        end)
+
+        XBox.Text = ""
+    end
+end)")
 local SaveButton = Instance.new("TextButton")
 local BookmarkList = Instance.new("Frame")
 local Layout = Instance.new("UIListLayout")

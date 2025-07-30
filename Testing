@@ -4,7 +4,7 @@ local Frame = Instance.new("Frame")
 local XBox = Instance.new("TextBox")
 local TeleportButton = Instance.new("TextButton")
 local ReturnButton = Instance.new("TextButton")
-local CopyPosButton = Instance.new("TextButton")
+local LokasiButton = Instance.new("TextButton")
 local CloseButton = Instance.new("TextButton")
 local MinimizeButton = Instance.new("TextButton")
 local BookmarkBox = Instance.new("TextBox")
@@ -15,7 +15,7 @@ local isMinimized = false
 local originalPosition = nil
 local bookmarks = {}
 
--- Styling GUI Transparan
+-- Styling Transparan
 local function styleElement(el)
     el.BackgroundTransparency = 0.7
     el.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
@@ -23,6 +23,7 @@ local function styleElement(el)
     el.BorderSizePixel = 0
 end
 
+-- GUI Parent
 ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
 
 Frame.Parent = ScreenGui
@@ -54,12 +55,13 @@ ReturnButton.Position = UDim2.new(0, 90, 0, 60)
 ReturnButton.Size = UDim2.new(0, 70, 0, 25)
 styleElement(ReturnButton)
 
--- Tombol Copy Posisi
-CopyPosButton.Parent = Frame
-CopyPosButton.Text = "Copy Posisi"
-CopyPosButton.Position = UDim2.new(0, 170, 0, 60)
-CopyPosButton.Size = UDim2.new(0, 60, 0, 25)
-styleElement(CopyPosButton)
+-- Tombol Lokasi Sekarang
+LokasiButton.Parent = Frame
+LokasiButton.Text = "Lokasi Sekarang"
+LokasiButton.TextSize = 12
+LokasiButton.Position = UDim2.new(0, 170, 0, 60)
+LokasiButton.Size = UDim2.new(0, 60, 0, 25)
+styleElement(LokasiButton)
 
 -- Input Nama Bookmark
 BookmarkBox.Parent = Frame
@@ -68,7 +70,7 @@ BookmarkBox.Position = UDim2.new(0, 10, 0, 95)
 BookmarkBox.Size = UDim2.new(0, 150, 0, 25)
 styleElement(BookmarkBox)
 
--- Tombol Simpan Bookmark
+-- Tombol Simpan
 SaveButton.Parent = Frame
 SaveButton.Text = "Simpan"
 SaveButton.Position = UDim2.new(0, 170, 0, 95)
@@ -151,13 +153,15 @@ ReturnButton.MouseButton1Click:Connect(function()
     end
 end)
 
--- Fungsi Copy Posisi
-CopyPosButton.MouseButton1Click:Connect(function()
+-- Fungsi Lokasi Sekarang + clipboard
+LokasiButton.MouseButton1Click:Connect(function()
     local player = game.Players.LocalPlayer
     local character = player.Character or player.CharacterAdded:Wait()
     if character.PrimaryPart then
         local pos = character.PrimaryPart.Position
-        XBox.Text = tostring(math.floor(pos.X))..","..tostring(math.floor(pos.Y))..","..tostring(math.floor(pos.Z))
+        local formatted = tostring(math.floor(pos.X))..","..tostring(math.floor(pos.Y))..","..tostring(math.floor(pos.Z))
+        XBox.Text = formatted
+        if setclipboard then setclipboard(formatted) end
     end
 end)
 
@@ -165,7 +169,6 @@ end)
 SaveButton.MouseButton1Click:Connect(function()
     local name = BookmarkBox.Text
     local coords = parseCoordinates(XBox.Text)
-
     if name ~= "" and coords then
         bookmarks[name] = coords
         local button = Instance.new("TextButton")
@@ -175,7 +178,6 @@ SaveButton.MouseButton1Click:Connect(function()
         button.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
         button.TextColor3 = Color3.fromRGB(255,255,255)
         button.Parent = BookmarkList
-
         button.MouseButton1Click:Connect(function()
             local player = game.Players.LocalPlayer
             local character = player.Character or player.CharacterAdded:Wait()
@@ -183,7 +185,6 @@ SaveButton.MouseButton1Click:Connect(function()
                 character:SetPrimaryPartCFrame(CFrame.new(coords))
             end
         end)
-
         BookmarkBox.Text = ""
         XBox.Text = ""
     end

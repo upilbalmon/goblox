@@ -1,327 +1,181 @@
---[[
-  AUTO COIN V3 - Loadstring Ready Version
-  Fitur:
-  1. Auto Claim Coin dengan height/delay customizable
-  2. Auto Win dengan delay 10 detik
-  3. Auto Rebirth (contoh tambahan)
-  4. Tampilan minimalis dengan status
-]]--
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local remote = ReplicatedStorage:WaitForChild("BLINK_UNRELIABLE_REMOTE")
 
-local fullScript = [[
-  -- Services
-  local ReplicatedStorage = game:GetService("ReplicatedStorage")
-  local Players = game:GetService("Players")
-  local player = Players.LocalPlayer
-  local playerGui = player:WaitForChild("PlayerGui")
+local args = {
+    buffer.fromstring("\n\000\000\000\224\239\202\145@\000\000\000 \198D\b@"),
+    {}
+}
 
-  -- State Variables
-  local jumpID, landingID, winID = nil, nil, nil
-  local isReady, running, autoWinEnabled, autoRebirthEnabled = false, false, false, false
-  local runTime, lastLoopTime, nextLoopTime, lastWinTime, lastRebirthTime = 0, 0, 0, 0, 0
-  local winDelay, rebirthDelay = 10, 30
-  local pauseInterval, pauseDuration = 10 * 60, 30
+-- Create GUI with free-form delay input
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local player = Players.LocalPlayer
 
-  -- GUI Setup
-  local MainFrame = Instance.new("ScreenGui")
-  MainFrame.Name = "CoinClaimerGUI"
-  MainFrame.Parent = playerGui
-  MainFrame.ResetOnSpawn = false
+-- Create ScreenGui
+local gui = Instance.new("ScreenGui")
+gui.Name = "LoopController"
+gui.Parent = player:WaitForChild("PlayerGui")
 
-  -- Main Frame
-  local Frame = Instance.new("Frame")
-  Frame.Size = UDim2.new(0, 200, 0, 270)
-  Frame.Position = UDim2.new(0.5, -100, 0.5, -135)
-  Frame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-  Frame.BackgroundTransparency = 0.7
-  Frame.Parent = MainFrame
-  Frame.Draggable = true
-  Frame.Active = true
+-- Create main frame (positioned at bottom center initially)
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 250, 0, 160)
+frame.Position = UDim2.new(0.5, -125, 1, -170) -- Bottom center
+frame.BackgroundTransparency = 0.3
+frame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+frame.BorderSizePixel = 0
+frame.ClipsDescendants = true
+frame.Active = true
+frame.Draggable = true
+frame.Parent = gui
 
-  -- Title Bar
-  local TitleBar = Instance.new("Frame")
-  TitleBar.Size = UDim2.new(1, 0, 0, 25)
-  TitleBar.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
-  TitleBar.Parent = Frame
+-- Add rounded corners
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 8)
+corner.Parent = frame
 
-  local TitleText = Instance.new("TextLabel")
-  TitleText.Size = UDim2.new(0.7, 0, 1, 0)
-  TitleText.Position = UDim2.new(0.15, 0, 0, 0)
-  TitleText.Text = "AUTO COIN V3"
-  TitleText.TextColor3 = Color3.new(1, 1, 1)
-  TitleText.BackgroundTransparency = 1
-  TitleText.Font = Enum.Font.SourceSansBold
-  TitleText.TextSize = 14
-  TitleText.Parent = TitleBar
+-- Title bar (draggable area)
+local titleBar = Instance.new("Frame")
+titleBar.Size = UDim2.new(1, 0, 0, 30)
+titleBar.BackgroundTransparency = 0.7
+titleBar.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+titleBar.BorderSizePixel = 0
+titleBar.Parent = frame
 
-  -- Minimize/Close Buttons
-  local MinimizeButton = Instance.new("TextButton")
-  MinimizeButton.Size = UDim2.new(0, 25, 0, 25)
-  MinimizeButton.Text = "-"
-  MinimizeButton.Font = Enum.Font.SourceSansBold
-  MinimizeButton.TextSize = 14
-  MinimizeButton.TextColor3 = Color3.new(1, 1, 1)
-  MinimizeButton.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
-  MinimizeButton.Parent = TitleBar
+local titleCorner = Instance.new("UICorner")
+titleCorner.CornerRadius = UDim.new(0, 8)
+titleCorner.Parent = titleBar
 
-  local CloseButton = Instance.new("TextButton")
-  CloseButton.Size = UDim2.new(0, 25, 0, 25)
-  CloseButton.Position = UDim2.new(1, -25, 0, 0)
-  CloseButton.Text = "X"
-  CloseButton.Font = Enum.Font.SourceSansBold
-  CloseButton.TextSize = 14
-  CloseButton.TextColor3 = Color3.new(1, 1, 1)
-  CloseButton.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
-  CloseButton.Parent = TitleBar
+local title = Instance.new("TextLabel")
+title.Text = "Loop Controller"
+title.Size = UDim2.new(1, 0, 1, 0)
+title.BackgroundTransparency = 1
+title.TextColor3 = Color3.new(1, 1, 1)
+title.Font = Enum.Font.SourceSansBold
+title.TextSize = 16
+title.Parent = titleBar
 
-  -- Main Content
-  local Content = Instance.new("Frame")
-  Content.Size = UDim2.new(1, -10, 1, -35)
-  Content.Position = UDim2.new(0, 5, 0, 30)
-  Content.BackgroundTransparency = 1
-  Content.Parent = Frame
+-- Content frame
+local contentFrame = Instance.new("Frame")
+contentFrame.Size = UDim2.new(1, 0, 1, -30)
+contentFrame.Position = UDim2.new(0, 0, 0, 30)
+contentFrame.BackgroundTransparency = 1
+contentFrame.Parent = frame
 
-  -- Input Section
-  local HeightTextBox = Instance.new("TextBox")
-  HeightTextBox.Size = UDim2.new(0.6, 0, 0, 20)
-  HeightTextBox.Position = UDim2.new(0.4, 0, 0, 0)
-  HeightTextBox.Text = "6000"
-  HeightTextBox.BackgroundColor3 = Color3.fromRGB(50, 50, 55)
-  HeightTextBox.TextColor3 = Color3.new(1, 1, 1)
-  HeightTextBox.Parent = Content
+-- Delay input section
+local delayLabel = Instance.new("TextLabel")
+delayLabel.Text = "Delay (seconds):"
+delayLabel.Size = UDim2.new(0.9, 0, 0, 20)
+delayLabel.Position = UDim2.new(0.05, 0, 0.1, 0)
+delayLabel.BackgroundTransparency = 1
+delayLabel.TextColor3 = Color3.new(1, 1, 1)
+delayLabel.TextXAlignment = Enum.TextXAlignment.Left
+delayLabel.Font = Enum.Font.SourceSans
+delayLabel.TextSize = 14
+delayLabel.Parent = contentFrame
 
-  local DelayTextBox = Instance.new("TextBox")
-  DelayTextBox.Size = UDim2.new(0.6, 0, 0, 20)
-  DelayTextBox.Position = UDim2.new(0.4, 0, 0, 25)
-  DelayTextBox.Text = "3"
-  DelayTextBox.BackgroundColor3 = Color3.fromRGB(50, 50, 55)
-  DelayTextBox.TextColor3 = Color3.new(1, 1, 1)
-  DelayTextBox.Parent = Content
+local delayInput = Instance.new("TextBox")
+delayInput.Name = "DelayInput"
+delayInput.PlaceholderText = "Enter any positive number"
+delayInput.Text = "0.1"
+delayInput.Size = UDim2.new(0.9, 0, 0, 30)
+delayInput.Position = UDim2.new(0.05, 0, 0.3, 0)
+delayInput.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+delayInput.BorderSizePixel = 0
+delayInput.TextColor3 = Color3.new(1, 1, 1)
+delayInput.Font = Enum.Font.SourceSans
+delayInput.TextSize = 14
+delayInput.ClearTextOnFocus = false
+delayInput.Parent = contentFrame
 
-  -- Status Indicators
-  local CoinStatus = Instance.new("TextLabel")
-  CoinStatus.Size = UDim2.new(1, 0, 0, 20)
-  CoinStatus.Position = UDim2.new(0, 0, 0, 55)
-  CoinStatus.Text = "COIN: WAITING..."
-  CoinStatus.TextColor3 = Color3.new(1, 0.5, 0.5)
-  CoinStatus.BackgroundTransparency = 1
-  CoinStatus.Font = Enum.Font.SourceSansBold
-  CoinStatus.TextSize = 14
-  CoinStatus.Parent = Content
+-- Toggle button
+local toggleButton = Instance.new("TextButton")
+toggleButton.Text = "START LOOP"
+toggleButton.Size = UDim2.new(0.9, 0, 0, 40)
+toggleButton.Position = UDim2.new(0.05, 0, 0.6, 0)
+toggleButton.BackgroundColor3 = Color3.fromRGB(50, 120, 50)
+toggleButton.BorderSizePixel = 0
+toggleButton.TextColor3 = Color3.new(1, 1, 1)
+toggleButton.Font = Enum.Font.SourceSansBold
+toggleButton.TextSize = 16
+toggleButton.Parent = contentFrame
 
-  local WinStatus = Instance.new("TextLabel")
-  WinStatus.Size = UDim2.new(1, 0, 0, 20)
-  WinStatus.Position = UDim2.new(0, 0, 0, 75)
-  WinStatus.Text = "WIN: WAITING..."
-  WinStatus.TextColor3 = Color3.new(1, 0.5, 0.5)
-  WinStatus.BackgroundTransparency = 1
-  WinStatus.Font = Enum.Font.SourceSansBold
-  WinStatus.TextSize = 14
-  WinStatus.Parent = Content
+-- Add rounded corners to input and button
+local inputCorner = Instance.new("UICorner")
+inputCorner.CornerRadius = UDim.new(0, 4)
+inputCorner.Parent = delayInput
 
-  -- Button Container
-  local ButtonContainer = Instance.new("Frame")
-  ButtonContainer.Size = UDim2.new(1, 0, 0, 100)
-  ButtonContainer.Position = UDim2.new(0, 0, 0, 100)
-  ButtonContainer.BackgroundTransparency = 1
-  ButtonContainer.Parent = Content
+local buttonCorner = Instance.new("UICorner")
+buttonCorner.CornerRadius = UDim.new(0, 4)
+buttonCorner.Parent = toggleButton
 
-  -- Buttons
-  local StartStopButton = Instance.new("TextButton")
-  StartStopButton.Size = UDim2.new(0.48, 0, 0, 40)
-  StartStopButton.Text = "COIN"
-  StartStopButton.BackgroundColor3 = Color3.fromRGB(75, 75, 75)
-  StartStopButton.Font = Enum.Font.SourceSansBold
-  StartStopButton.TextSize = 16
-  StartStopButton.Parent = ButtonContainer
+-- Loop control variables
+local running = false
+local currentDelay = 0.1
 
-  local AutoWinToggle = Instance.new("TextButton")
-  AutoWinToggle.Size = UDim2.new(0.48, 0, 0, 40)
-  AutoWinToggle.Position = UDim2.new(0.52, 0, 0, 0)
-  AutoWinToggle.Text = "AUTO WIN"
-  AutoWinToggle.BackgroundColor3 = Color3.fromRGB(75, 75, 75)
-  AutoWinToggle.Font = Enum.Font.SourceSansBold
-  AutoWinToggle.TextSize = 16
-  AutoWinToggle.Parent = ButtonContainer
+-- Input validation function
+local function validateInput()
+    local text = delayInput.Text
+    local number = tonumber(text)
+    
+    if number and number > 0 then
+        currentDelay = number -- Accept any positive number
+        return true
+    else
+        delayInput.Text = tostring(currentDelay) -- Revert to last valid value
+        return false
+    end
+end
 
-  local AutoRebirthToggle = Instance.new("TextButton")
-  AutoRebirthToggle.Size = UDim2.new(0.48, 0, 0, 40)
-  AutoRebirthToggle.Position = UDim2.new(0, 0, 0, 45)
-  AutoRebirthToggle.Text = "AUTO REBIRTH"
-  AutoRebirthToggle.BackgroundColor3 = Color3.fromRGB(75, 75, 75)
-  AutoRebirthToggle.Font = Enum.Font.SourceSansBold
-  AutoRebirthToggle.TextSize = 16
-  AutoRebirthToggle.Parent = ButtonContainer
-
-  -- Main Status
-  local MainStatus = Instance.new("TextLabel")
-  MainStatus.Size = UDim2.new(1, 0, 0, 20)
-  MainStatus.Position = UDim2.new(0, 0, 0, 205)
-  MainStatus.Text = "JUMP FROM THE TOWER FIRST!"
-  MainStatus.TextColor3 = Color3.new(1, 1, 1)
-  MainStatus.BackgroundTransparency = 1
-  MainStatus.Font = Enum.Font.SourceSansBold
-  MainStatus.TextSize = 14
-  MainStatus.Parent = Content
-
-  -- Core Functions
-  local function SendJumpData()
-      if jumpID then
-          ReplicatedStorage:WaitForChild("ProMgs"):WaitForChild("RemoteEvent"):FireServer("JumpResults", jumpID, tonumber(HeightTextBox.Text))
-      end
-  end
-
-  local function SendLandingData()
-      if landingID then
-          ReplicatedStorage:WaitForChild("ProMgs"):WaitForChild("RemoteEvent"):FireServer("LandingResults", landingID)
-      end
-  end
-
-  local function SendWinData()
-      if winID then
-          ReplicatedStorage:WaitForChild("ProMgs"):WaitForChild("RemoteEvent"):FireServer("ClaimRooftopWinsReward", winID)
-      end
-  end
-
-  local function DoRebirth()
-      -- Contoh fungsi rebirth (sesuaikan dengan game)
-      warn("Executing rebirth...")
-  end
-
-  local function UpdateStatus()
-      isReady = jumpID and landingID
-      CoinStatus.Text = isReady and "COIN: READY!" or "COIN: WAITING..."
-      CoinStatus.TextColor3 = isReady and Color3.new(0.5, 1, 0.5) or Color3.new(1, 0.5, 0.5)
-      WinStatus.Text = winID and "WIN: READY!" or "WIN: WAITING..."
-      WinStatus.TextColor3 = winID and Color3.new(0.5, 1, 0.5) or Color3.new(1, 0.5, 0.5)
-      StartStopButton.Active = isReady
-      MainStatus.Text = isReady and "READY TO START!" or "JUMP FROM THE TOWER FIRST!"
-  end
-
-  local function RunLoop()
-      while running do
-          local internalDelay = tonumber(DelayTextBox.Text) or 3
-          lastLoopTime = os.time()
-          nextLoopTime = lastLoopTime + internalDelay
-          
-          -- Auto Coin
-          SendJumpData()
-          
-          -- Auto Win
-          if autoWinEnabled and os.time() - lastWinTime >= winDelay then
-              SendWinData()
-              lastWinTime = os.time()
-          end
-          
-          -- Auto Rebirth
-          if autoRebirthEnabled and os.time() - lastRebirthTime >= rebirthDelay then
-              DoRebirth()
-              lastRebirthTime = os.time()
-          end
-          
-          -- Update status
-          while os.time() < nextLoopTime and running do
-              local remaining = nextLoopTime - os.time()
-              local statusText = string.format("Running (%.1fs)", remaining)
-              if autoWinEnabled then
-                  statusText = statusText..string.format(" | Win (%.1fs)", winDelay - (os.time() - lastWinTime))
-              end
-              if autoRebirthEnabled then
-                  statusText = statusText..string.format(" | Rebirth (%.1fs)", rebirthDelay - (os.time() - lastRebirthTime))
-              end
-              MainStatus.Text = statusText
-              task.wait(0.1)
-          end
-          
-          if not running then break end
-          SendLandingData()
-          
-          -- Auto-pause
-          runTime = runTime + (os.time() - lastLoopTime)
-          if runTime >= pauseInterval then
-              running = false
-              MainStatus.Text = "Pausing for 30 seconds..."
-              task.wait(pauseDuration)
-              runTime = 0
-              running = true
-          end
-      end
-      MainStatus.Text = isReady and "READY TO START!" or "JUMP FROM THE TOWER FIRST!"
-  end
-
-  -- Event Handlers
-  StartStopButton.MouseButton1Click:Connect(function()
-      if isReady then
-          running = not running
-          if running then
-              StartStopButton.Text = "COIN ON"
-              StartStopButton.BackgroundColor3 = Color3.fromRGB(0, 175, 200)
-              lastWinTime = os.time()
-              lastRebirthTime = os.time()
-              coroutine.wrap(RunLoop)()
-          else
-              StartStopButton.Text = "COIN OFF"
-              StartStopButton.BackgroundColor3 = Color3.fromRGB(75, 75, 75)
-          end
-      end
-  end)
-
-  AutoWinToggle.MouseButton1Click:Connect(function()
-      if winID then
-          autoWinEnabled = not autoWinEnabled
-          AutoWinToggle.Text = autoWinEnabled and "WIN ON" or "WIN OFF"
-          AutoWinToggle.BackgroundColor3 = autoWinEnabled and Color3.fromRGB(0, 175, 200) or Color3.fromRGB(75, 75, 75)
-          lastWinTime = os.time()
-      end
-  end)
-
-  AutoRebirthToggle.MouseButton1Click:Connect(function()
-      autoRebirthEnabled = not autoRebirthEnabled
-      AutoRebirthToggle.Text = autoRebirthEnabled and "REBIRTH ON" or "REBIRTH OFF"
-      AutoRebirthToggle.BackgroundColor3 = autoRebirthEnabled and Color3.fromRGB(0, 175, 200) or Color3.fromRGB(75, 75, 75)
-      lastRebirthTime = os.time()
-  end)
-
-  MinimizeButton.MouseButton1Click:Connect(function()
-      local minimized = Frame.Size == UDim2.new(0, 70, 0, 25)
-      Frame.Size = minimized and UDim2.new(0, 200, 0, 270) or UDim2.new(0, 70, 0, 25)
-      MinimizeButton.Text = minimized and "-" or "+"
-      for _, child in pairs(Frame:GetChildren()) do
-          if child ~= TitleBar then
-              child.Visible = minimized
-          end
-      end
-  end)
-
-  CloseButton.MouseButton1Click:Connect(function()
-      MainFrame:Destroy()
-  end)
-
-  -- Remote Event Hook
-  local remoteEvent = ReplicatedStorage:WaitForChild("ProMgs"):WaitForChild("RemoteEvent")
-  local oldNamecall
-  oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
-      if self == remoteEvent and getnamecallmethod() == "FireServer" then
-          local args = {...}
-          if args[1] == "JumpResults" then
-              jumpID = args[2]
-          elseif args[1] == "LandingResults" then
-              landingID = args[2]
-          elseif args[1] == "ClaimRooftopWinsReward" then
-              winID = args[2]
-          end
-          UpdateStatus()
-      end
-      return oldNamecall(self, ...)
-  end
-
-  print("AUTO COIN V3 Loaded Successfully!")
-]]
-
--- Jalankan script
-local success, err = pcall(function()
-    loadstring(fullScript)()
+delayInput.FocusLost:Connect(function(enterPressed)
+    validateInput()
 end)
 
-if not success then
-    warn("Error loading script:", err)
+-- Toggle button functionality
+toggleButton.MouseButton1Click:Connect(function()
+    if validateInput() then
+        running = not running
+        if running then
+            toggleButton.Text = "STOP LOOP"
+            toggleButton.BackgroundColor3 = Color3.fromRGB(120, 50, 50)
+        else
+            toggleButton.Text = "START LOOP"
+            toggleButton.BackgroundColor3 = Color3.fromRGB(50, 120, 50)
+        end
+    end
+end)
+
+-- Smooth dragging functionality
+local dragStartPos
+local frameStartPos
+
+titleBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragStartPos = input.Position
+        frameStartPos = frame.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragStartPos = nil
+            end
+        end)
+    end
+end)
+
+titleBar.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement and dragStartPos then
+        local delta = input.Position - dragStartPos
+        frame.Position = UDim2.new(
+            frameStartPos.X.Scale, 
+            frameStartPos.X.Offset + delta.X,
+            frameStartPos.Y.Scale,
+            frameStartPos.Y.Offset + delta.Y
+        )
+    end
+end)
+
+-- Main loop
+while true do
+    if running then
+        remote:FireServer(unpack(args))
+    end
+    task.wait(currentDelay)
 end

@@ -4,6 +4,7 @@ local Frame = Instance.new("Frame")
 local XBox = Instance.new("TextBox")
 local TeleportButton = Instance.new("TextButton")
 local ReturnButton = Instance.new("TextButton")
+local CopyPosButton = Instance.new("TextButton")
 local CloseButton = Instance.new("TextButton")
 local MinimizeButton = Instance.new("TextButton")
 local BookmarkBox = Instance.new("TextBox")
@@ -25,55 +26,61 @@ end
 ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
 
 Frame.Parent = ScreenGui
-Frame.Size = UDim2.new(0, 220, 0, 300)
+Frame.Size = UDim2.new(0, 240, 0, 340)
 Frame.Position = UDim2.new(0, 10, 0, 10)
 Frame.BackgroundTransparency = 0.5
 Frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 Frame.Active = true
 Frame.Draggable = true
 
--- Input Gabungan X,Y,Z
+-- TextBox Koordinat
 XBox.Parent = Frame
 XBox.PlaceholderText = "X,Y,Z"
 XBox.Position = UDim2.new(0, 10, 0, 30)
-XBox.Size = UDim2.new(0, 200, 0, 25)
+XBox.Size = UDim2.new(0, 220, 0, 25)
 styleElement(XBox)
 
 -- Tombol Teleport
 TeleportButton.Parent = Frame
 TeleportButton.Text = "Teleport"
 TeleportButton.Position = UDim2.new(0, 10, 0, 60)
-TeleportButton.Size = UDim2.new(0, 95, 0, 25)
+TeleportButton.Size = UDim2.new(0, 70, 0, 25)
 styleElement(TeleportButton)
 
 -- Tombol Kembali
 ReturnButton.Parent = Frame
 ReturnButton.Text = "Kembali"
-ReturnButton.Position = UDim2.new(0, 115, 0, 60)
-ReturnButton.Size = UDim2.new(0, 95, 0, 25)
+ReturnButton.Position = UDim2.new(0, 90, 0, 60)
+ReturnButton.Size = UDim2.new(0, 70, 0, 25)
 styleElement(ReturnButton)
+
+-- Tombol Copy Posisi
+CopyPosButton.Parent = Frame
+CopyPosButton.Text = "Copy Posisi"
+CopyPosButton.Position = UDim2.new(0, 170, 0, 60)
+CopyPosButton.Size = UDim2.new(0, 60, 0, 25)
+styleElement(CopyPosButton)
 
 -- Input Nama Bookmark
 BookmarkBox.Parent = Frame
 BookmarkBox.PlaceholderText = "Nama lokasi"
 BookmarkBox.Position = UDim2.new(0, 10, 0, 95)
-BookmarkBox.Size = UDim2.new(0, 140, 0, 25)
+BookmarkBox.Size = UDim2.new(0, 150, 0, 25)
 styleElement(BookmarkBox)
 
 -- Tombol Simpan Bookmark
 SaveButton.Parent = Frame
 SaveButton.Text = "Simpan"
-SaveButton.Position = UDim2.new(0, 155, 0, 95)
-SaveButton.Size = UDim2.new(0, 55, 0, 25)
+SaveButton.Position = UDim2.new(0, 170, 0, 95)
+SaveButton.Size = UDim2.new(0, 60, 0, 25)
 styleElement(SaveButton)
 
 -- Daftar Bookmark
 BookmarkList.Parent = Frame
 BookmarkList.Position = UDim2.new(0, 10, 0, 130)
-BookmarkList.Size = UDim2.new(0, 200, 0, 120)
+BookmarkList.Size = UDim2.new(0, 220, 0, 160)
 BookmarkList.BackgroundTransparency = 0.7
 BookmarkList.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-BookmarkList.Visible = true
 Layout.Parent = BookmarkList
 Layout.SortOrder = Enum.SortOrder.LayoutOrder
 
@@ -106,7 +113,7 @@ MinimizeButton.MouseButton1Click:Connect(function()
     end
 end)
 
--- Parsing koordinat dari input
+-- Parsing input koordinat
 local function parseCoordinates(input)
     local coords = string.split(input, ",")
     if #coords == 3 then
@@ -120,7 +127,7 @@ local function parseCoordinates(input)
     return nil
 end
 
--- Fungsi teleport
+-- Fungsi Teleport
 TeleportButton.MouseButton1Click:Connect(function()
     local coords = parseCoordinates(XBox.Text)
     if coords then
@@ -133,7 +140,7 @@ TeleportButton.MouseButton1Click:Connect(function()
     end
 end)
 
--- Fungsi kembali
+-- Fungsi Kembali
 ReturnButton.MouseButton1Click:Connect(function()
     if originalPosition then
         local player = game.Players.LocalPlayer
@@ -141,6 +148,16 @@ ReturnButton.MouseButton1Click:Connect(function()
         if character.PrimaryPart then
             character:SetPrimaryPartCFrame(CFrame.new(originalPosition))
         end
+    end
+end)
+
+-- Fungsi Copy Posisi
+CopyPosButton.MouseButton1Click:Connect(function()
+    local player = game.Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
+    if character.PrimaryPart then
+        local pos = character.PrimaryPart.Position
+        XBox.Text = tostring(math.floor(pos.X))..","..tostring(math.floor(pos.Y))..","..tostring(math.floor(pos.Z))
     end
 end)
 

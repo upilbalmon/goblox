@@ -57,8 +57,7 @@ styleElement(ReturnButton)
 
 -- Tombol Lokasi Sekarang
 LokasiButton.Parent = Frame
-LokasiButton.Text = "Lokasi Sekarang"
-LokasiButton.TextSize = 12
+LokasiButton.Text = "Get Loc"
 LokasiButton.Position = UDim2.new(0, 170, 0, 60)
 LokasiButton.Size = UDim2.new(0, 60, 0, 25)
 styleElement(LokasiButton)

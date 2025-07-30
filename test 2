@@ -123,25 +123,32 @@ end
 
 -- Fungsi Teleport
 TeleportButton.MouseButton1Click:Connect(function()
-    local _, coords = parseCoordinates(XBox.Text)
-    if coords then
-        local player = game.Players.LocalPlayer
-        local character = player.Character or player.CharacterAdded:Wait()
-        if character.PrimaryPart then
-            originalPosition = character.PrimaryPart.Position
-            character:SetPrimaryPartCFrame(CFrame.new(coords))
+    -- Ambil posisi karakter sekarang
+    local karakter = game.Players.LocalPlayer.Character
+    if karakter and karakter:FindFirstChild("HumanoidRootPart") then
+        posisiAsal = karakter.HumanoidRootPart.Position
+    end
+
+    -- Ambil input koordinat dari TextBox
+    local input = XBox.Text -- Misal: "Pos,50,10,100"
+    local split = string.split(input, ",")
+    
+    if #split == 4 and split[1] == "Pos" then
+        local x = tonumber(split[2])
+        local y = tonumber(split[3])
+        local z = tonumber(split[4])
+
+        if x and y and z then
+            karakter:MoveTo(Vector3.new(x, y, z))
         end
     end
 end)
 
 -- Fungsi Kembali
-ReturnButton.MouseButton1Click:Connect(function()
-    if originalPosition then
-        local player = game.Players.LocalPlayer
-        local character = player.Character or player.CharacterAdded:Wait()
-        if character.PrimaryPart then
-            character:SetPrimaryPartCFrame(CFrame.new(originalPosition))
-        end
+KembaliButton.MouseButton1Click:Connect(function()
+    local karakter = game.Players.LocalPlayer.Character
+    if karakter and karakter:FindFirstChild("HumanoidRootPart") and posisiAsal then
+        karakter:MoveTo(posisiAsal)
     end
 end)
 

@@ -44,7 +44,7 @@ local Frame = Instance.new("Frame")
 Frame.Size = UDim2.new(0, 200, 0, 220)
 Frame.Position = UDim2.new(0.5, -100, 0.5, -110)
 Frame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-Frame.BackgroundTransparency = 0.7
+Frame.BackgroundTransparency = 0.5
 Frame.Parent = MainFrame
 Frame.Draggable = true
 Frame.Active = true
@@ -326,7 +326,7 @@ StartStopButton.MouseButton1Click:Connect(function()
         running = not running
         if running then
             StartStopButton.Text = "COIN ON"
-            StartStopButton.BackgroundColor3 = Color3.fromRGB(00, 175, 200) -- Oren merah saat aktif
+            StartStopButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50) -- Oren merah saat aktif
             lastWinTime = os.time()
             coroutineLoop = coroutine.wrap(RunLoop)
             coroutineLoop()
@@ -345,7 +345,7 @@ AutoWinToggle.MouseButton1Click:Connect(function()
         autoWinEnabled = not autoWinEnabled
         if autoWinEnabled then
             AutoWinToggle.Text = "WIN ON"
-            AutoWinToggle.BackgroundColor3 = Color3.fromRGB(00, 175, 200) -- Oren terang
+            AutoWinToggle.BackgroundColor3 = Color3.fromRGB(50, 200, 50) -- Oren terang
             lastWinTime = os.time()
         else
             AutoWinToggle.Text = "WIN OFF"

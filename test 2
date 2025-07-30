@@ -242,7 +242,6 @@ styleElement(ReturnButton)
 -- Tombol GetLoc
 GetLocButton.Parent = Frame
 GetLocButton.Text = "GetLoc"
-GetLocButton.TextSize = 12
 GetLocButton.Position = UDim2.new(0, 170, 0, 60)
 GetLocButton.Size = UDim2.new(0, 60, 0, 25)
 styleElement(GetLocButton)
@@ -339,17 +338,26 @@ KembaliButton.MouseButton1Click:Connect(function()
 end)
 
 -- Fungsi GetLoc
+
 GetLocButton.MouseButton1Click:Connect(function()
     local player = game.Players.LocalPlayer
     local character = player.Character or player.CharacterAdded:Wait()
-    if character.PrimaryPart then
-        local pos = character.PrimaryPart.Position
-        local formatted = "Pos," .. math.floor(pos.X) .. "," .. math.floor(pos.Y) .. "," .. math.floor(pos.Z)
+
+    if character and character:FindFirstChild("HumanoidRootPart") then
+        local pos = character.HumanoidRootPart.Position
+        local formatted = string.format("Pos,%d,%d,%d", math.floor(pos.X), math.floor(pos.Y), math.floor(pos.Z))
+        
+        -- Masukkan ke TextBox
         XBox.Text = formatted
-        if setclipboard then setclipboard(formatted) end
+
+        -- Salin ke clipboard jika didukung executor
+        if setclipboard then
+            setclipboard(formatted)
+        end
+    else
+        XBox.Text = "Karakter tidak ditemukan!"
     end
 end)
-
 -- Fungsi Simpan Bookmark
 SaveButton.MouseButton1Click:Connect(function()
     local name, coords = parseCoordinates(XBox.Text)

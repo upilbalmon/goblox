@@ -57,7 +57,7 @@ styleElement(ReturnButton)
 
 -- Tombol Lokasi Sekarang
 LokasiButton.Parent = Frame
-LokasiButton.Text = "Get Loc"
+LokasiButton.Text = "GetLoc"
 LokasiButton.Position = UDim2.new(0, 170, 0, 60)
 LokasiButton.Size = UDim2.new(0, 60, 0, 25)
 styleElement(LokasiButton)
@@ -158,7 +158,7 @@ LokasiButton.MouseButton1Click:Connect(function()
     local character = player.Character or player.CharacterAdded:Wait()
     if character.PrimaryPart then
         local pos = character.PrimaryPart.Position
-        local formatted = tostring(math.floor(pos.X))..","..tostring(math.floor(pos.Y))..","..tostring(math.floor(pos.Z))
+        local formatted = string.format("%d,%d,%d", math.floor(pos.X), math.floor(pos.Y), math.floor(pos.Z))
         XBox.Text = formatted
         if setclipboard then setclipboard(formatted) end
     end
@@ -177,13 +177,19 @@ SaveButton.MouseButton1Click:Connect(function()
         button.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
         button.TextColor3 = Color3.fromRGB(255,255,255)
         button.Parent = BookmarkList
+
         button.MouseButton1Click:Connect(function()
             local player = game.Players.LocalPlayer
             local character = player.Character or player.CharacterAdded:Wait()
             if character.PrimaryPart then
                 character:SetPrimaryPartCFrame(CFrame.new(coords))
             end
+            -- Isi ke textbox & salin ke clipboard
+            local formatted = string.format("%d,%d,%d", math.floor(coords.X), math.floor(coords.Y), math.floor(coords.Z))
+            XBox.Text = formatted
+            if setclipboard then setclipboard(formatted) end
         end)
+
         BookmarkBox.Text = ""
         XBox.Text = ""
     end

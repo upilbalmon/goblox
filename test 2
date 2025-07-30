@@ -16,8 +16,8 @@ local fullScript = [[
 
   -- State Variables
   local jumpID, landingID, winID = nil, nil, nil
-  local isReady, running, autoWinEnabled = false, false, false
-  local runTime, lastLoopTime, nextLoopTime, lastWinTime = 0, 0, 0, 0
+  local isReady, running, autoWinEnabled, autoRebirthEnabled = false, false, false, false
+  local runTime, lastLoopTime, nextLoopTime, lastWinTime, lastRebirthTime = 0, 0, 0, 0, 0
   local winDelay, rebirthDelay = 10, 30
   local pauseInterval, pauseDuration = 10 * 60, 30
 
@@ -126,7 +126,7 @@ local fullScript = [[
   ButtonContainer.Parent = Content
 
   -- Buttons
-  local AutoCoinButton = Instance.new("TextButton")
+  local StartStopButton = Instance.new("TextButton")
   StartStopButton.Size = UDim2.new(0.48, 0, 0, 40)
   StartStopButton.Text = "COIN"
   StartStopButton.BackgroundColor3 = Color3.fromRGB(75, 75, 75)
@@ -142,6 +142,15 @@ local fullScript = [[
   AutoWinToggle.Font = Enum.Font.SourceSansBold
   AutoWinToggle.TextSize = 16
   AutoWinToggle.Parent = ButtonContainer
+
+  local AutoRebirthToggle = Instance.new("TextButton")
+  AutoRebirthToggle.Size = UDim2.new(0.48, 0, 0, 40)
+  AutoRebirthToggle.Position = UDim2.new(0, 0, 0, 45)
+  AutoRebirthToggle.Text = "AUTO REBIRTH"
+  AutoRebirthToggle.BackgroundColor3 = Color3.fromRGB(75, 75, 75)
+  AutoRebirthToggle.Font = Enum.Font.SourceSansBold
+  AutoRebirthToggle.TextSize = 16
+  AutoRebirthToggle.Parent = ButtonContainer
 
   -- Main Status
   local MainStatus = Instance.new("TextLabel")
@@ -173,13 +182,18 @@ local fullScript = [[
       end
   end
 
+  local function DoRebirth()
+      -- Contoh fungsi rebirth (sesuaikan dengan game)
+      warn("Executing rebirth...")
+  end
+
   local function UpdateStatus()
       isReady = jumpID and landingID
       CoinStatus.Text = isReady and "COIN: READY!" or "COIN: WAITING..."
       CoinStatus.TextColor3 = isReady and Color3.new(0.5, 1, 0.5) or Color3.new(1, 0.5, 0.5)
       WinStatus.Text = winID and "WIN: READY!" or "WIN: WAITING..."
       WinStatus.TextColor3 = winID and Color3.new(0.5, 1, 0.5) or Color3.new(1, 0.5, 0.5)
-      AutoCoinButton.Active = isReady
+      StartStopButton.Active = isReady
       MainStatus.Text = isReady and "READY TO START!" or "JUMP FROM THE TOWER FIRST!"
   end
 
@@ -196,6 +210,12 @@ local fullScript = [[
           if autoWinEnabled and os.time() - lastWinTime >= winDelay then
               SendWinData()
               lastWinTime = os.time()
+          end
+          
+          -- Auto Rebirth
+          if autoRebirthEnabled and os.time() - lastRebirthTime >= rebirthDelay then
+              DoRebirth()
+              lastRebirthTime = os.time()
           end
           
           -- Update status
@@ -229,7 +249,7 @@ local fullScript = [[
   end
 
   -- Event Handlers
-  AutoCoinButton.MouseButton1Click:Connect(function()
+  StartStopButton.MouseButton1Click:Connect(function()
       if isReady then
           running = not running
           if running then
@@ -252,6 +272,13 @@ local fullScript = [[
           AutoWinToggle.BackgroundColor3 = autoWinEnabled and Color3.fromRGB(0, 175, 200) or Color3.fromRGB(75, 75, 75)
           lastWinTime = os.time()
       end
+  end)
+
+  AutoRebirthToggle.MouseButton1Click:Connect(function()
+      autoRebirthEnabled = not autoRebirthEnabled
+      AutoRebirthToggle.Text = autoRebirthEnabled and "REBIRTH ON" or "REBIRTH OFF"
+      AutoRebirthToggle.BackgroundColor3 = autoRebirthEnabled and Color3.fromRGB(0, 175, 200) or Color3.fromRGB(75, 75, 75)
+      lastRebirthTime = os.time()
   end)
 
   MinimizeButton.MouseButton1Click:Connect(function()

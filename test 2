@@ -1,388 +1,300 @@
--- Buat GUI
-local ScreenGui = Instance.new("ScreenGui")
-local Frame = Instance.new("Frame")
-local XBox = Instance.new("TextBox")
-local TeleportButton = Instance.new("TextButton")
-local ReturnButton = Instance.new("TextButton")
-local GetLocButton = Instance.new("TextButton")
-local CloseButton = Instance.new("TextButton")
-local MinimizeButton = Instance.new-- Buat GUI
-local ScreenGui = Instance.new("ScreenGui")
-local Frame = Instance.new("Frame")
-local XBox = Instance.new("TextBox")
-local TeleportButton = Instance.new("TextButton")
-local ReturnButton = Instance.new("TextButton")
-local GetLocButton = Instance.new("TextButton")
-local CloseButton = Instance.new("TextButton")
-local MinimizeButton = Instance.new("TextButton")
-local SaveButton = Instance.new("TextButton")
-local BookmarkList = Instance.new("Frame")
-local Layout = Instance.new("UIListLayout")
-local isMinimized = false
-local originalPosition = nil
-local bookmarks = {}
+--[[
+  AUTO COIN V3 - Loadstring Ready Version
+  Fitur:
+  1. Auto Claim Coin dengan height/delay customizable
+  2. Auto Win dengan delay 10 detik
+  3. Auto Rebirth (contoh tambahan)
+  4. Tampilan minimalis dengan status
+]]--
 
--- Styling GUI Transparan
-local function styleElement(el)
-    el.BackgroundTransparency = 0.7
-    el.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    el.TextColor3 = Color3.fromRGB(255, 255, 255)
-    el.BorderSizePixel = 0
+local fullScript = [[
+  -- Services
+  local ReplicatedStorage = game:GetService("ReplicatedStorage")
+  local Players = game:GetService("Players")
+  local player = Players.LocalPlayer
+  local playerGui = player:WaitForChild("PlayerGui")
+
+  -- State Variables
+  local jumpID, landingID, winID = nil, nil, nil
+  local isReady, running, autoWinEnabled = false, false, false
+  local runTime, lastLoopTime, nextLoopTime, lastWinTime = 0, 0, 0, 0
+  local winDelay, rebirthDelay = 10, 30
+  local pauseInterval, pauseDuration = 10 * 60, 30
+
+  -- GUI Setup
+  local MainFrame = Instance.new("ScreenGui")
+  MainFrame.Name = "CoinClaimerGUI"
+  MainFrame.Parent = playerGui
+  MainFrame.ResetOnSpawn = false
+
+  -- Main Frame
+  local Frame = Instance.new("Frame")
+  Frame.Size = UDim2.new(0, 200, 0, 270)
+  Frame.Position = UDim2.new(0.5, -100, 0.5, -135)
+  Frame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+  Frame.BackgroundTransparency = 0.7
+  Frame.Parent = MainFrame
+  Frame.Draggable = true
+  Frame.Active = true
+
+  -- Title Bar
+  local TitleBar = Instance.new("Frame")
+  TitleBar.Size = UDim2.new(1, 0, 0, 25)
+  TitleBar.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+  TitleBar.Parent = Frame
+
+  local TitleText = Instance.new("TextLabel")
+  TitleText.Size = UDim2.new(0.7, 0, 1, 0)
+  TitleText.Position = UDim2.new(0.15, 0, 0, 0)
+  TitleText.Text = "AUTO COIN V3"
+  TitleText.TextColor3 = Color3.new(1, 1, 1)
+  TitleText.BackgroundTransparency = 1
+  TitleText.Font = Enum.Font.SourceSansBold
+  TitleText.TextSize = 14
+  TitleText.Parent = TitleBar
+
+  -- Minimize/Close Buttons
+  local MinimizeButton = Instance.new("TextButton")
+  MinimizeButton.Size = UDim2.new(0, 25, 0, 25)
+  MinimizeButton.Text = "-"
+  MinimizeButton.Font = Enum.Font.SourceSansBold
+  MinimizeButton.TextSize = 14
+  MinimizeButton.TextColor3 = Color3.new(1, 1, 1)
+  MinimizeButton.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+  MinimizeButton.Parent = TitleBar
+
+  local CloseButton = Instance.new("TextButton")
+  CloseButton.Size = UDim2.new(0, 25, 0, 25)
+  CloseButton.Position = UDim2.new(1, -25, 0, 0)
+  CloseButton.Text = "X"
+  CloseButton.Font = Enum.Font.SourceSansBold
+  CloseButton.TextSize = 14
+  CloseButton.TextColor3 = Color3.new(1, 1, 1)
+  CloseButton.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
+  CloseButton.Parent = TitleBar
+
+  -- Main Content
+  local Content = Instance.new("Frame")
+  Content.Size = UDim2.new(1, -10, 1, -35)
+  Content.Position = UDim2.new(0, 5, 0, 30)
+  Content.BackgroundTransparency = 1
+  Content.Parent = Frame
+
+  -- Input Section
+  local HeightTextBox = Instance.new("TextBox")
+  HeightTextBox.Size = UDim2.new(0.6, 0, 0, 20)
+  HeightTextBox.Position = UDim2.new(0.4, 0, 0, 0)
+  HeightTextBox.Text = "6000"
+  HeightTextBox.BackgroundColor3 = Color3.fromRGB(50, 50, 55)
+  HeightTextBox.TextColor3 = Color3.new(1, 1, 1)
+  HeightTextBox.Parent = Content
+
+  local DelayTextBox = Instance.new("TextBox")
+  DelayTextBox.Size = UDim2.new(0.6, 0, 0, 20)
+  DelayTextBox.Position = UDim2.new(0.4, 0, 0, 25)
+  DelayTextBox.Text = "3"
+  DelayTextBox.BackgroundColor3 = Color3.fromRGB(50, 50, 55)
+  DelayTextBox.TextColor3 = Color3.new(1, 1, 1)
+  DelayTextBox.Parent = Content
+
+  -- Status Indicators
+  local CoinStatus = Instance.new("TextLabel")
+  CoinStatus.Size = UDim2.new(1, 0, 0, 20)
+  CoinStatus.Position = UDim2.new(0, 0, 0, 55)
+  CoinStatus.Text = "COIN: WAITING..."
+  CoinStatus.TextColor3 = Color3.new(1, 0.5, 0.5)
+  CoinStatus.BackgroundTransparency = 1
+  CoinStatus.Font = Enum.Font.SourceSansBold
+  CoinStatus.TextSize = 14
+  CoinStatus.Parent = Content
+
+  local WinStatus = Instance.new("TextLabel")
+  WinStatus.Size = UDim2.new(1, 0, 0, 20)
+  WinStatus.Position = UDim2.new(0, 0, 0, 75)
+  WinStatus.Text = "WIN: WAITING..."
+  WinStatus.TextColor3 = Color3.new(1, 0.5, 0.5)
+  WinStatus.BackgroundTransparency = 1
+  WinStatus.Font = Enum.Font.SourceSansBold
+  WinStatus.TextSize = 14
+  WinStatus.Parent = Content
+
+  -- Button Container
+  local ButtonContainer = Instance.new("Frame")
+  ButtonContainer.Size = UDim2.new(1, 0, 0, 100)
+  ButtonContainer.Position = UDim2.new(0, 0, 0, 100)
+  ButtonContainer.BackgroundTransparency = 1
+  ButtonContainer.Parent = Content
+
+  -- Buttons
+  local AutoCoinButton = Instance.new("TextButton")
+  StartStopButton.Size = UDim2.new(0.48, 0, 0, 40)
+  StartStopButton.Text = "COIN"
+  StartStopButton.BackgroundColor3 = Color3.fromRGB(75, 75, 75)
+  StartStopButton.Font = Enum.Font.SourceSansBold
+  StartStopButton.TextSize = 16
+  StartStopButton.Parent = ButtonContainer
+
+  local AutoWinToggle = Instance.new("TextButton")
+  AutoWinToggle.Size = UDim2.new(0.48, 0, 0, 40)
+  AutoWinToggle.Position = UDim2.new(0.52, 0, 0, 0)
+  AutoWinToggle.Text = "AUTO WIN"
+  AutoWinToggle.BackgroundColor3 = Color3.fromRGB(75, 75, 75)
+  AutoWinToggle.Font = Enum.Font.SourceSansBold
+  AutoWinToggle.TextSize = 16
+  AutoWinToggle.Parent = ButtonContainer
+
+  -- Main Status
+  local MainStatus = Instance.new("TextLabel")
+  MainStatus.Size = UDim2.new(1, 0, 0, 20)
+  MainStatus.Position = UDim2.new(0, 0, 0, 205)
+  MainStatus.Text = "JUMP FROM THE TOWER FIRST!"
+  MainStatus.TextColor3 = Color3.new(1, 1, 1)
+  MainStatus.BackgroundTransparency = 1
+  MainStatus.Font = Enum.Font.SourceSansBold
+  MainStatus.TextSize = 14
+  MainStatus.Parent = Content
+
+  -- Core Functions
+  local function SendJumpData()
+      if jumpID then
+          ReplicatedStorage:WaitForChild("ProMgs"):WaitForChild("RemoteEvent"):FireServer("JumpResults", jumpID, tonumber(HeightTextBox.Text))
+      end
+  end
+
+  local function SendLandingData()
+      if landingID then
+          ReplicatedStorage:WaitForChild("ProMgs"):WaitForChild("RemoteEvent"):FireServer("LandingResults", landingID)
+      end
+  end
+
+  local function SendWinData()
+      if winID then
+          ReplicatedStorage:WaitForChild("ProMgs"):WaitForChild("RemoteEvent"):FireServer("ClaimRooftopWinsReward", winID)
+      end
+  end
+
+  local function UpdateStatus()
+      isReady = jumpID and landingID
+      CoinStatus.Text = isReady and "COIN: READY!" or "COIN: WAITING..."
+      CoinStatus.TextColor3 = isReady and Color3.new(0.5, 1, 0.5) or Color3.new(1, 0.5, 0.5)
+      WinStatus.Text = winID and "WIN: READY!" or "WIN: WAITING..."
+      WinStatus.TextColor3 = winID and Color3.new(0.5, 1, 0.5) or Color3.new(1, 0.5, 0.5)
+      AutoCoinButton.Active = isReady
+      MainStatus.Text = isReady and "READY TO START!" or "JUMP FROM THE TOWER FIRST!"
+  end
+
+  local function RunLoop()
+      while running do
+          local internalDelay = tonumber(DelayTextBox.Text) or 3
+          lastLoopTime = os.time()
+          nextLoopTime = lastLoopTime + internalDelay
+          
+          -- Auto Coin
+          SendJumpData()
+          
+          -- Auto Win
+          if autoWinEnabled and os.time() - lastWinTime >= winDelay then
+              SendWinData()
+              lastWinTime = os.time()
+          end
+          
+          -- Update status
+          while os.time() < nextLoopTime and running do
+              local remaining = nextLoopTime - os.time()
+              local statusText = string.format("Running (%.1fs)", remaining)
+              if autoWinEnabled then
+                  statusText = statusText..string.format(" | Win (%.1fs)", winDelay - (os.time() - lastWinTime))
+              end
+              if autoRebirthEnabled then
+                  statusText = statusText..string.format(" | Rebirth (%.1fs)", rebirthDelay - (os.time() - lastRebirthTime))
+              end
+              MainStatus.Text = statusText
+              task.wait(0.1)
+          end
+          
+          if not running then break end
+          SendLandingData()
+          
+          -- Auto-pause
+          runTime = runTime + (os.time() - lastLoopTime)
+          if runTime >= pauseInterval then
+              running = false
+              MainStatus.Text = "Pausing for 30 seconds..."
+              task.wait(pauseDuration)
+              runTime = 0
+              running = true
+          end
+      end
+      MainStatus.Text = isReady and "READY TO START!" or "JUMP FROM THE TOWER FIRST!"
+  end
+
+  -- Event Handlers
+  AutoCoinButton.MouseButton1Click:Connect(function()
+      if isReady then
+          running = not running
+          if running then
+              StartStopButton.Text = "COIN ON"
+              StartStopButton.BackgroundColor3 = Color3.fromRGB(0, 175, 200)
+              lastWinTime = os.time()
+              lastRebirthTime = os.time()
+              coroutine.wrap(RunLoop)()
+          else
+              StartStopButton.Text = "COIN OFF"
+              StartStopButton.BackgroundColor3 = Color3.fromRGB(75, 75, 75)
+          end
+      end
+  end)
+
+  AutoWinToggle.MouseButton1Click:Connect(function()
+      if winID then
+          autoWinEnabled = not autoWinEnabled
+          AutoWinToggle.Text = autoWinEnabled and "WIN ON" or "WIN OFF"
+          AutoWinToggle.BackgroundColor3 = autoWinEnabled and Color3.fromRGB(0, 175, 200) or Color3.fromRGB(75, 75, 75)
+          lastWinTime = os.time()
+      end
+  end)
+
+  MinimizeButton.MouseButton1Click:Connect(function()
+      local minimized = Frame.Size == UDim2.new(0, 70, 0, 25)
+      Frame.Size = minimized and UDim2.new(0, 200, 0, 270) or UDim2.new(0, 70, 0, 25)
+      MinimizeButton.Text = minimized and "-" or "+"
+      for _, child in pairs(Frame:GetChildren()) do
+          if child ~= TitleBar then
+              child.Visible = minimized
+          end
+      end
+  end)
+
+  CloseButton.MouseButton1Click:Connect(function()
+      MainFrame:Destroy()
+  end)
+
+  -- Remote Event Hook
+  local remoteEvent = ReplicatedStorage:WaitForChild("ProMgs"):WaitForChild("RemoteEvent")
+  local oldNamecall
+  oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
+      if self == remoteEvent and getnamecallmethod() == "FireServer" then
+          local args = {...}
+          if args[1] == "JumpResults" then
+              jumpID = args[2]
+          elseif args[1] == "LandingResults" then
+              landingID = args[2]
+          elseif args[1] == "ClaimRooftopWinsReward" then
+              winID = args[2]
+          end
+          UpdateStatus()
+      end
+      return oldNamecall(self, ...)
+  end
+
+  print("AUTO COIN V3 Loaded Successfully!")
+]]
+
+-- Jalankan script
+local success, err = pcall(function()
+    loadstring(fullScript)()
+end)
+
+if not success then
+    warn("Error loading script:", err)
 end
-
-ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
-
-Frame.Parent = ScreenGui
-Frame.Size = UDim2.new(0, 240, 0, 340)
-Frame.Position = UDim2.new(0, 10, 0, 10)
-Frame.BackgroundTransparency = 0.5
-Frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-Frame.Active = true
-Frame.Draggable = true
-
--- TextBox Gabungan
-XBox.Parent = Frame
-XBox.PlaceholderText = "Nama,X,Y,Z"
-XBox.Position = UDim2.new(0, 10, 0, 30)
-XBox.Size = UDim2.new(0, 220, 0, 25)
-styleElement(XBox)
-
--- Tombol Teleport
-TeleportButton.Parent = Frame
-TeleportButton.Text = "Teleport"
-TeleportButton.Position = UDim2.new(0, 10, 0, 60)
-TeleportButton.Size = UDim2.new(0, 70, 0, 25)
-styleElement(TeleportButton)
-
--- Tombol Kembali
-ReturnButton.Parent = Frame
-ReturnButton.Text = "Kembali"
-ReturnButton.Position = UDim2.new(0, 90, 0, 60)
-ReturnButton.Size = UDim2.new(0, 70, 0, 25)
-styleElement(ReturnButton)
-
--- Tombol GetLoc
-GetLocButton.Parent = Frame
-GetLocButton.Text = "GetLoc"
-GetLocButton.TextSize = 12
-GetLocButton.Position = UDim2.new(0, 170, 0, 60)
-GetLocButton.Size = UDim2.new(0, 60, 0, 25)
-styleElement(GetLocButton)
-
--- Tombol Simpan
-SaveButton.Parent = Frame
-SaveButton.Text = "Simpan"
-SaveButton.Position = UDim2.new(0, 10, 0, 95)
-SaveButton.Size = UDim2.new(0, 220, 0, 25)
-styleElement(SaveButton)
-
--- Daftar Bookmark
-BookmarkList.Parent = Frame
-BookmarkList.Position = UDim2.new(0, 10, 0, 130)
-BookmarkList.Size = UDim2.new(0, 220, 0, 160)
-BookmarkList.BackgroundTransparency = 0.7
-BookmarkList.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-Layout.Parent = BookmarkList
-Layout.SortOrder = Enum.SortOrder.LayoutOrder
-
--- Tombol Close
-CloseButton.Parent = Frame
-CloseButton.Text = "X"
-CloseButton.Size = UDim2.new(0, 20, 0, 20)
-CloseButton.Position = UDim2.new(1, -25, 0, 5)
-styleElement(CloseButton)
-
-CloseButton.MouseButton1Click:Connect(function()
-    ScreenGui:Destroy()
-end)
-
--- Tombol Minimize
-MinimizeButton.Parent = Frame
-MinimizeButton.Text = "-"
-MinimizeButton.Size = UDim2.new(0, 20, 0, 20)
-MinimizeButton.Position = UDim2.new(1, -50, 0, 5)
-styleElement(MinimizeButton)
-
-MinimizeButton.MouseButton1Click:Connect(function()
-    isMinimized = not isMinimized
-    for _, child in pairs(Frame:GetChildren()) do
-        if child:IsA("TextBox") or child:IsA("TextButton") or child:IsA("Frame") then
-            if child ~= MinimizeButton and child ~= CloseButton then
-                child.Visible = not isMinimized
-            end
-        end
-    end
-end)
-
--- Parsing input koordinat
-local function parseCoordinates(input)
-    local parts = string.split(input, ",")
-    if #parts == 4 then
-        local name = parts[1]
-        local x = tonumber(parts[2])
-        local y = tonumber(parts[3])
-        local z = tonumber(parts[4])
-        if x and y and z then
-            return name, Vector3.new(x, y, z)
-        end
-    end
-    return nil, nil
-end
-
--- Fungsi Teleport
-TeleportButton.MouseButton1Click:Connect(function()
-    local _, coords = parseCoordinates(XBox.Text)
-    if coords then
-        local player = game.Players.LocalPlayer
-        local character = player.Character or player.CharacterAdded:Wait()
-        if character.PrimaryPart then
-            originalPosition = character.PrimaryPart.Position
-            character:SetPrimaryPartCFrame(CFrame.new(coords))
-        end
-    end
-end)
-
--- Fungsi Kembali
-ReturnButton.MouseButton1Click:Connect(function()
-    if originalPosition then
-        local player = game.Players.LocalPlayer
-        local character = player.Character or player.CharacterAdded:Wait()
-        if character.PrimaryPart then
-            character:SetPrimaryPartCFrame(CFrame.new(originalPosition))
-        end
-    end
-end)
-
--- Fungsi GetLoc
-GetLocButton.MouseButton1Click:Connect(function()
-    local player = game.Players.LocalPlayer
-    local character = player.Character or player.CharacterAdded:Wait()
-    if character.PrimaryPart then
-        local pos = character.PrimaryPart.Position
-        local formatted = "Pos," .. math.floor(pos.X) .. "," .. math.floor(pos.Y) .. "," .. math.floor(pos.Z)
-        XBox.Text = formatted
-        if setclipboard then setclipboard(formatted) end
-    end
-end)
-
--- Fungsi Simpan Bookmark
-SaveButton.MouseButton1Click:Connect(function()
-    local name, coords = parseCoordinates(XBox.Text)
-    if name and coords then
-        bookmarks[name] = coords
-        local button = Instance.new("TextButton")
-        button.Text = name
-        button.Size = UDim2.new(1, 0, 0, 25)
-        button.BackgroundTransparency = 0.6
-        button.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
-        button.TextColor3 = Color3.fromRGB(255,255,255)
-        button.Parent = BookmarkList
-
-        button.MouseButton1Click:Connect(function()
-            -- Teleport dan salin ke textbox
-            local player = game.Players.LocalPlayer
-            local character = player.Character or player.CharacterAdded:Wait()
-            if character.PrimaryPart then
-                character:SetPrimaryPartCFrame(CFrame.new(coords))
-            end
-            local formatted = string.format("%s,%d,%d,%d", name, coords.X, coords.Y, coords.Z)
-            XBox.Text = formatted
-            if setclipboard then setclipboard(formatted) end
-        end)
-
-        XBox.Text = ""
-    end
-end)")
-local SaveButton = Instance.new("TextButton")
-local BookmarkList = Instance.new("Frame")
-local Layout = Instance.new("UIListLayout")
-local isMinimized = false
-local originalPosition = nil
-local bookmarks = {}
-
--- Styling GUI Transparan
-local function styleElement(el)
-    el.BackgroundTransparency = 0.7
-    el.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    el.TextColor3 = Color3.fromRGB(255, 255, 255)
-    el.BorderSizePixel = 0
-end
-
-ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
-
-Frame.Parent = ScreenGui
-Frame.Size = UDim2.new(0, 240, 0, 340)
-Frame.Position = UDim2.new(0, 10, 0, 10)
-Frame.BackgroundTransparency = 0.5
-Frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-Frame.Active = true
-Frame.Draggable = true
-
--- TextBox Gabungan
-XBox.Parent = Frame
-XBox.PlaceholderText = "Nama,X,Y,Z"
-XBox.Position = UDim2.new(0, 10, 0, 30)
-XBox.Size = UDim2.new(0, 220, 0, 25)
-styleElement(XBox)
-
--- Tombol Teleport
-TeleportButton.Parent = Frame
-TeleportButton.Text = "Teleport"
-TeleportButton.Position = UDim2.new(0, 10, 0, 60)
-TeleportButton.Size = UDim2.new(0, 70, 0, 25)
-styleElement(TeleportButton)
-
--- Tombol Kembali
-ReturnButton.Parent = Frame
-ReturnButton.Text = "Kembali"
-ReturnButton.Position = UDim2.new(0, 90, 0, 60)
-ReturnButton.Size = UDim2.new(0, 70, 0, 25)
-styleElement(ReturnButton)
-
--- Tombol GetLoc
-GetLocButton.Parent = Frame
-GetLocButton.Text = "GetLoc"
-GetLocButton.Position = UDim2.new(0, 170, 0, 60)
-GetLocButton.Size = UDim2.new(0, 60, 0, 25)
-styleElement(GetLocButton)
-
--- Tombol Simpan
-SaveButton.Parent = Frame
-SaveButton.Text = "Simpan"
-SaveButton.Position = UDim2.new(0, 10, 0, 95)
-SaveButton.Size = UDim2.new(0, 220, 0, 25)
-styleElement(SaveButton)
-
--- Daftar Bookmark
-BookmarkList.Parent = Frame
-BookmarkList.Position = UDim2.new(0, 10, 0, 130)
-BookmarkList.Size = UDim2.new(0, 220, 0, 160)
-BookmarkList.BackgroundTransparency = 0.7
-BookmarkList.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-Layout.Parent = BookmarkList
-Layout.SortOrder = Enum.SortOrder.LayoutOrder
-
--- Tombol Close
-CloseButton.Parent = Frame
-CloseButton.Text = "X"
-CloseButton.Size = UDim2.new(0, 20, 0, 20)
-CloseButton.Position = UDim2.new(1, -25, 0, 5)
-styleElement(CloseButton)
-
-CloseButton.MouseButton1Click:Connect(function()
-    ScreenGui:Destroy()
-end)
-
--- Tombol Minimize
-MinimizeButton.Parent = Frame
-MinimizeButton.Text = "-"
-MinimizeButton.Size = UDim2.new(0, 20, 0, 20)
-MinimizeButton.Position = UDim2.new(1, -50, 0, 5)
-styleElement(MinimizeButton)
-
-MinimizeButton.MouseButton1Click:Connect(function()
-    isMinimized = not isMinimized
-    for _, child in pairs(Frame:GetChildren()) do
-        if child:IsA("TextBox") or child:IsA("TextButton") or child:IsA("Frame") then
-            if child ~= MinimizeButton and child ~= CloseButton then
-                child.Visible = not isMinimized
-            end
-        end
-    end
-end)
-
--- Parsing input koordinat
-local function parseCoordinates(input)
-    local parts = string.split(input, ",")
-    if #parts == 4 then
-        local name = parts[1]
-        local x = tonumber(parts[2])
-        local y = tonumber(parts[3])
-        local z = tonumber(parts[4])
-        if x and y and z then
-            return name, Vector3.new(x, y, z)
-        end
-    end
-    return nil, nil
-end
-
--- Fungsi Teleport
-TeleportButton.MouseButton1Click:Connect(function()
-    -- Ambil posisi karakter sekarang
-    local karakter = game.Players.LocalPlayer.Character
-    if karakter and karakter:FindFirstChild("HumanoidRootPart") then
-        posisiAsal = karakter.HumanoidRootPart.Position
-    end
-
-    -- Ambil input koordinat dari TextBox
-    local input = XBox.Text -- Misal: "Pos,50,10,100"
-    local split = string.split(input, ",")
-    
-    if #split == 4 and split[1] == "Pos" then
-        local x = tonumber(split[2])
-        local y = tonumber(split[3])
-        local z = tonumber(split[4])
-
-        if x and y and z then
-            karakter:MoveTo(Vector3.new(x, y, z))
-        end
-    end
-end)
-
--- Fungsi Kembali
-KembaliButton.MouseButton1Click:Connect(function()
-    local karakter = game.Players.LocalPlayer.Character
-    if karakter and karakter:FindFirstChild("HumanoidRootPart") and posisiAsal then
-        karakter:MoveTo(posisiAsal)
-    end
-end)
-
--- Fungsi GetLoc
-
-GetLocButton.MouseButton1Click:Connect(function()
-    local player = game.Players.LocalPlayer
-    local character = player.Character or player.CharacterAdded:Wait()
-
-    if character and character:FindFirstChild("HumanoidRootPart") then
-        local pos = character.HumanoidRootPart.Position
-        local formatted = string.format("Pos,%d,%d,%d", math.floor(pos.X), math.floor(pos.Y), math.floor(pos.Z))
-        
-        -- Masukkan ke TextBox
-        XBox.Text = formatted
-
-        -- Salin ke clipboard jika didukung executor
-        if setclipboard then
-            setclipboard(formatted)
-        end
-    else
-        XBox.Text = "Karakter tidak ditemukan!"
-    end
-end)
--- Fungsi Simpan Bookmark
-SaveButton.MouseButton1Click:Connect(function()
-    local name, coords = parseCoordinates(XBox.Text)
-    if name and coords then
-        bookmarks[name] = coords
-        local button = Instance.new("TextButton")
-        button.Text = name
-        button.Size = UDim2.new(1, 0, 0, 25)
-        button.BackgroundTransparency = 0.6
-        button.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
-        button.TextColor3 = Color3.fromRGB(255,255,255)
-        button.Parent = BookmarkList
-
-        button.MouseButton1Click:Connect(function()
-            -- Teleport dan salin ke textbox
-            local player = game.Players.LocalPlayer
-            local character = player.Character or player.CharacterAdded:Wait()
-            if character.PrimaryPart then
-                character:SetPrimaryPartCFrame(CFrame.new(coords))
-            end
-            local formatted = string.format("%s,%d,%d,%d", name, coords.X, coords.Y, coords.Z)
-            XBox.Text = formatted
-            if setclipboard then setclipboard(formatted) end
-        end)
-
-        XBox.Text = ""
-    end
-end)

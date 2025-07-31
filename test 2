@@ -68,12 +68,11 @@ buttonCorner.Parent = toggleButton
 
 -- Remote setup
 local args = {
-    10,
-    0.05972291701960958
+	1132,
+	0.1536744532156537
 }
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("_Index"):WaitForChild("sleitnick_knit@1.5.1"):WaitForChild("knit"):WaitForChild("Services"):WaitForChild("ClimbService"):WaitForChild("RE"):WaitForChild("ClimbEndEvent"):FireServer(unpack(args))
 
-local remotePath = ReplicatedStorage:WaitForChild("Packages"):WaitForChild("_Index"):WaitForChild("sleitnick_knit@1.5.1"):WaitForChild("knit"):WaitForChild("Services"):WaitForChild("ClimbService"):WaitForChild("RE"):WaitForChild("ClimbEndEvent")
-local remoteEvent = remotePath
 
 -- Loop control
 local running = false

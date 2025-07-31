@@ -1,31 +1,18 @@
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local remote = ReplicatedStorage:WaitForChild("BLINK_UNRELIABLE_REMOTE")
-
-local args = {
-    buffer.fromstring("\022\n\000\000\000World1Egg3"),
-    {}
-}
-
--- Create GUI with free-form delay input
 local Players = game:GetService("Players")
-local UserInputService = game:GetService("UserInputService")
 local player = Players.LocalPlayer
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
--- Create ScreenGui
+-- Create the GUI
 local gui = Instance.new("ScreenGui")
-gui.Name = "LoopController"
+gui.Name = "ClimbEventGUI"
 gui.Parent = player:WaitForChild("PlayerGui")
 
--- Create main frame (positioned at bottom center initially)
+-- Main frame
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 250, 0, 160)
-frame.Position = UDim2.new(0.5, -125, 1, -170) -- Bottom center
-frame.BackgroundTransparency = 0.3
+frame.Size = UDim2.new(0, 200, 0, 120)
+frame.Position = UDim2.new(0.5, -100, 1, -130) -- Bottom center
 frame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 frame.BorderSizePixel = 0
-frame.ClipsDescendants = true
-frame.Active = true
-frame.Draggable = true
 frame.Parent = gui
 
 -- Add rounded corners
@@ -33,71 +20,42 @@ local corner = Instance.new("UICorner")
 corner.CornerRadius = UDim.new(0, 8)
 corner.Parent = frame
 
--- Title bar (draggable area)
-local titleBar = Instance.new("Frame")
-titleBar.Size = UDim2.new(1, 0, 0, 30)
-titleBar.BackgroundTransparency = 0.7
-titleBar.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-titleBar.BorderSizePixel = 0
-titleBar.Parent = frame
-
-local titleCorner = Instance.new("UICorner")
-titleCorner.CornerRadius = UDim.new(0, 8)
-titleCorner.Parent = titleBar
-
+-- Title
 local title = Instance.new("TextLabel")
-title.Text = "Loop Controller"
-title.Size = UDim2.new(1, 0, 1, 0)
+title.Text = "Climb Event Controller"
+title.Size = UDim2.new(1, 0, 0, 25)
 title.BackgroundTransparency = 1
 title.TextColor3 = Color3.new(1, 1, 1)
 title.Font = Enum.Font.SourceSansBold
-title.TextSize = 16
-title.Parent = titleBar
+title.Parent = frame
 
--- Content frame
-local contentFrame = Instance.new("Frame")
-contentFrame.Size = UDim2.new(1, 0, 1, -30)
-contentFrame.Position = UDim2.new(0, 0, 0, 30)
-contentFrame.BackgroundTransparency = 1
-contentFrame.Parent = frame
-
--- Delay input section
+-- Delay input
 local delayLabel = Instance.new("TextLabel")
 delayLabel.Text = "Delay (seconds):"
 delayLabel.Size = UDim2.new(0.9, 0, 0, 20)
-delayLabel.Position = UDim2.new(0.05, 0, 0.1, 0)
+delayLabel.Position = UDim2.new(0.05, 0, 0.25, 0)
 delayLabel.BackgroundTransparency = 1
 delayLabel.TextColor3 = Color3.new(1, 1, 1)
 delayLabel.TextXAlignment = Enum.TextXAlignment.Left
-delayLabel.Font = Enum.Font.SourceSans
-delayLabel.TextSize = 14
-delayLabel.Parent = contentFrame
+delayLabel.Parent = frame
 
 local delayInput = Instance.new("TextBox")
-delayInput.Name = "DelayInput"
-delayInput.PlaceholderText = "Enter any positive number"
+delayInput.PlaceholderText = "0.1"
 delayInput.Text = "0.1"
-delayInput.Size = UDim2.new(0.9, 0, 0, 30)
-delayInput.Position = UDim2.new(0.05, 0, 0.3, 0)
+delayInput.Size = UDim2.new(0.9, 0, 0, 25)
+delayInput.Position = UDim2.new(0.05, 0, 0.45, 0)
 delayInput.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-delayInput.BorderSizePixel = 0
 delayInput.TextColor3 = Color3.new(1, 1, 1)
-delayInput.Font = Enum.Font.SourceSans
-delayInput.TextSize = 14
-delayInput.ClearTextOnFocus = false
-delayInput.Parent = contentFrame
+delayInput.Parent = frame
 
 -- Toggle button
 local toggleButton = Instance.new("TextButton")
-toggleButton.Text = "START LOOP"
-toggleButton.Size = UDim2.new(0.9, 0, 0, 40)
-toggleButton.Position = UDim2.new(0.05, 0, 0.6, 0)
+toggleButton.Text = "START"
+toggleButton.Size = UDim2.new(0.9, 0, 0, 30)
+toggleButton.Position = UDim2.new(0.05, 0, 0.75, 0)
 toggleButton.BackgroundColor3 = Color3.fromRGB(50, 120, 50)
-toggleButton.BorderSizePixel = 0
 toggleButton.TextColor3 = Color3.new(1, 1, 1)
-toggleButton.Font = Enum.Font.SourceSansBold
-toggleButton.TextSize = 16
-toggleButton.Parent = contentFrame
+toggleButton.Parent = frame
 
 -- Add rounded corners to input and button
 local inputCorner = Instance.new("UICorner")
@@ -108,74 +66,53 @@ local buttonCorner = Instance.new("UICorner")
 buttonCorner.CornerRadius = UDim.new(0, 4)
 buttonCorner.Parent = toggleButton
 
--- Loop control variables
+-- Remote setup
+local args = {
+    10,
+    0.05972291701960958
+}
+
+local remotePath = ReplicatedStorage:WaitForChild("Packages"):WaitForChild("_Index"):WaitForChild("sleitnick_knit@1.5.1"):WaitForChild("knit"):WaitForChild("Services"):WaitForChild("ClimbService"):WaitForChild("RE"):WaitForChild("ClimbEndEvent")
+local remoteEvent = remotePath
+
+-- Loop control
 local running = false
 local currentDelay = 0.1
 
--- Input validation function
+-- Input validation
 local function validateInput()
     local text = delayInput.Text
     local number = tonumber(text)
     
     if number and number > 0 then
-        currentDelay = number -- Accept any positive number
+        currentDelay = number
         return true
     else
-        delayInput.Text = tostring(currentDelay) -- Revert to last valid value
+        delayInput.Text = tostring(currentDelay)
         return false
     end
 end
 
-delayInput.FocusLost:Connect(function(enterPressed)
+delayInput.FocusLost:Connect(function()
     validateInput()
 end)
 
--- Toggle button functionality
+-- Toggle functionality
 toggleButton.MouseButton1Click:Connect(function()
     if validateInput() then
         running = not running
         if running then
-            toggleButton.Text = "STOP LOOP"
+            toggleButton.Text = "STOP"
             toggleButton.BackgroundColor3 = Color3.fromRGB(120, 50, 50)
+            
+            -- Start firing loop
+            while running do
+                remoteEvent:FireServer(unpack(args))
+                task.wait(currentDelay)
+            end
         else
-            toggleButton.Text = "START LOOP"
+            toggleButton.Text = "START"
             toggleButton.BackgroundColor3 = Color3.fromRGB(50, 120, 50)
         end
     end
 end)
-
--- Smooth dragging functionality
-local dragStartPos
-local frameStartPos
-
-titleBar.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        dragStartPos = input.Position
-        frameStartPos = frame.Position
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then
-                dragStartPos = nil
-            end
-        end)
-    end
-end)
-
-titleBar.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement and dragStartPos then
-        local delta = input.Position - dragStartPos
-        frame.Position = UDim2.new(
-            frameStartPos.X.Scale, 
-            frameStartPos.X.Offset + delta.X,
-            frameStartPos.Y.Scale,
-            frameStartPos.Y.Offset + delta.Y
-        )
-    end
-end)
-
--- Main loop
-while true do
-    if running then
-        remote:FireServer(unpack(args))
-    end
-    task.wait(currentDelay)
-end

@@ -1,16 +1,17 @@
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
 
 -- Create the GUI
 local gui = Instance.new("ScreenGui")
 gui.Name = "CodeExecutor"
 gui.Parent = player:WaitForChild("PlayerGui")
 
--- Main frame
+-- Main frame (now taller to accommodate all elements)
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 350, 0, 300)
-frame.Position = UDim2.new(0.5, -175, 0.5, -150) -- Center
+frame.Size = UDim2.new(0, 350, 0, 350) -- Increased height
+frame.Position = UDim2.new(0.5, -175, 0.5, -175)
 frame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
 frame.BorderSizePixel = 0
 frame.Active = true
@@ -43,7 +44,7 @@ title.Font = Enum.Font.SourceSansBold
 title.TextXAlignment = Enum.TextXAlignment.Left
 title.Parent = titleBar
 
--- Control buttons (minimize and close)
+-- Control buttons
 local hideButton = Instance.new("TextButton")
 hideButton.Text = "_"
 hideButton.Size = UDim2.new(0, 25, 0, 25)
@@ -69,7 +70,7 @@ contentFrame.Position = UDim2.new(0, 0, 0, 30)
 contentFrame.BackgroundTransparency = 1
 contentFrame.Parent = frame
 
--- Code input
+-- Code input (slightly reduced height to make room)
 local codeLabel = Instance.new("TextLabel")
 codeLabel.Text = "Code to execute:"
 codeLabel.Size = UDim2.new(0.9, 0, 0, 20)
@@ -81,7 +82,7 @@ codeLabel.Parent = contentFrame
 
 local codeInput = Instance.new("TextBox")
 codeInput.PlaceholderText = "Enter Lua code here"
-codeInput.Size = UDim2.new(0.9, 0, 0, 150)
+codeInput.Size = UDim2.new(0.9, 0, 0, 120) -- Reduced height
 codeInput.Position = UDim2.new(0.05, 0, 0, 25)
 codeInput.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
 codeInput.TextColor3 = Color3.new(1, 1, 1)
@@ -94,11 +95,20 @@ codeInput.MultiLine = true
 codeInput.ClearTextOnFocus = false
 codeInput.Parent = contentFrame
 
--- Delay input
+-- Clear text button (new position)
+local clearButton = Instance.new("TextButton")
+clearButton.Text = "Clear Code"
+clearButton.Size = UDim2.new(0.9, 0, 0, 25)
+clearButton.Position = UDim2.new(0.05, 0, 0, 150)
+clearButton.BackgroundColor3 = Color3.fromRGB(80, 80, 90)
+clearButton.TextColor3 = Color3.new(1, 1, 1)
+clearButton.Parent = contentFrame
+
+-- Delay input section (repositioned)
 local delayLabel = Instance.new("TextLabel")
 delayLabel.Text = "Loop delay (seconds):"
-delayLabel.Size = UDim2.new(0.45, 0, 0, 20)
-delayLabel.Position = UDim2.new(0.05, 0, 0, 185)
+delayLabel.Size = UDim2.new(0.9, 0, 0, 20)
+delayLabel.Position = UDim2.new(0.05, 0, 0, 180)
 delayLabel.BackgroundTransparency = 1
 delayLabel.TextColor3 = Color3.new(1, 1, 1)
 delayLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -107,40 +117,50 @@ delayLabel.Parent = contentFrame
 local delayInput = Instance.new("TextBox")
 delayInput.PlaceholderText = "0.1"
 delayInput.Text = "0.1"
-delayInput.Size = UDim2.new(0.45, 0, 0, 25)
-delayInput.Position = UDim2.new(0.05, 0, 0, 205)
+delayInput.Size = UDim2.new(0.9, 0, 0, 25)
+delayInput.Position = UDim2.new(0.05, 0, 0, 200)
 delayInput.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
 delayInput.TextColor3 = Color3.new(1, 1, 1)
 delayInput.Parent = contentFrame
 
--- Action buttons
+-- Action buttons (repositioned with better spacing)
 local executeOnceButton = Instance.new("TextButton")
 executeOnceButton.Text = "Execute Once"
-executeOnceButton.Size = UDim2.new(0.4, 0, 0, 30)
-executeOnceButton.Position = UDim2.new(0.55, 0, 0, 185)
+executeOnceButton.Size = UDim2.new(0.9, 0, 0, 30)
+executeOnceButton.Position = UDim2.new(0.05, 0, 0, 230)
 executeOnceButton.BackgroundColor3 = Color3.fromRGB(60, 80, 120)
 executeOnceButton.TextColor3 = Color3.new(1, 1, 1)
 executeOnceButton.Parent = contentFrame
 
 local toggleLoopButton = Instance.new("TextButton")
 toggleLoopButton.Text = "Start Loop"
-toggleLoopButton.Size = UDim2.new(0.4, 0, 0, 30)
-toggleLoopButton.Position = UDim2.new(0.55, 0, 0, 220)
+toggleLoopButton.Size = UDim2.new(0.9, 0, 0, 30)
+toggleLoopButton.Position = UDim2.new(0.05, 0, 0, 265)
 toggleLoopButton.BackgroundColor3 = Color3.fromRGB(60, 120, 80)
 toggleLoopButton.TextColor3 = Color3.new(1, 1, 1)
 toggleLoopButton.Parent = contentFrame
 
--- Status label
+-- Status labels (repositioned)
 local statusLabel = Instance.new("TextLabel")
 statusLabel.Text = "Status: Ready"
 statusLabel.Size = UDim2.new(0.9, 0, 0, 20)
-statusLabel.Position = UDim2.new(0.05, 0, 0, 240)
+statusLabel.Position = UDim2.new(0.05, 0, 0, 300)
 statusLabel.BackgroundTransparency = 1
 statusLabel.TextColor3 = Color3.new(1, 1, 1)
 statusLabel.TextXAlignment = Enum.TextXAlignment.Left
 statusLabel.Parent = contentFrame
 
--- Add rounded corners to all elements
+local cooldownLabel = Instance.new("TextLabel")
+cooldownLabel.Text = "Next execution: -"
+cooldownLabel.Size = UDim2.new(0.9, 0, 0, 20)
+cooldownLabel.Position = UDim2.new(0.05, 0, 0, 320)
+cooldownLabel.BackgroundTransparency = 1
+cooldownLabel.TextColor3 = Color3.new(1, 1, 1)
+cooldownLabel.TextXAlignment = Enum.TextXAlignment.Left
+cooldownLabel.Visible = false
+cooldownLabel.Parent = contentFrame
+
+-- Add rounded corners to all interactive elements
 local inputCorner = Instance.new("UICorner")
 inputCorner.CornerRadius = UDim.new(0, 4)
 inputCorner.Parent = codeInput
@@ -148,32 +168,50 @@ inputCorner:Clone().Parent = delayInput
 
 local buttonCorner = Instance.new("UICorner")
 buttonCorner.CornerRadius = UDim.new(0, 4)
-buttonCorner.Parent = executeOnceButton
-buttonCorner:Clone().Parent = toggleLoopButton
-buttonCorner:Clone().Parent = hideButton
-buttonCorner:Clone().Parent = closeButton
+for _, button in pairs({executeOnceButton, toggleLoopButton, hideButton, closeButton, clearButton}) do
+    buttonCorner:Clone().Parent = button
+end
 
 -- Variables
 local runningLoop = false
 local currentDelay = 0.1
 local loopThread = nil
+local lastExecutionTime = 0
+local cooldownThread = nil
+local isDragging = false
 
 -- Function to safely execute code
 local function executeCode(code)
     local success, errorMsg = pcall(function()
-        local func, err = loadstring(code)
+        local func, err = loadstring("return function() "..code.."\nend")
         if func then
-            func()
+            func()()
         else
             error(err)
         end
     end)
     
+    lastExecutionTime = os.clock()
+    
     if not success then
-        statusLabel.Text = "Error: " .. tostring(errorMsg)
+        statusLabel.Text = "Error: " .. tostring(errorMsg):gsub("^.+:%d+: ", "")
         task.wait(2)
-        statusLabel.Text = "Status: Ready"
+        if runningLoop then
+            statusLabel.Text = "Status: Loop running (error)"
+        else
+            statusLabel.Text = "Status: Ready"
+        end
     end
+end
+
+-- Update cooldown display
+local function updateCooldown()
+    while runningLoop do
+        local remaining = math.max(0, currentDelay - (os.clock() - lastExecutionTime))
+        cooldownLabel.Text = string.format("Next execution: %.2fs", remaining)
+        task.wait(0.05)
+    end
+    cooldownLabel.Text = "Next execution: -"
 end
 
 -- Input validation
@@ -186,51 +224,72 @@ local function validateDelay()
         statusLabel.Text = "Invalid delay - using 0.1s"
         delayInput.Text = "0.1"
         currentDelay = 0.1
-        task.wait(2)
-        statusLabel.Text = "Status: Ready"
+        task.wait(1.5)
+        if runningLoop then
+            statusLabel.Text = "Status: Loop running"
+        else
+            statusLabel.Text = "Status: Ready"
+        end
         return false
     end
 end
+
+-- Clear text button
+clearButton.MouseButton1Click:Connect(function()
+    codeInput.Text = ""
+    codeInput:CaptureFocus()
+end)
 
 -- Execute once button
 executeOnceButton.MouseButton1Click:Connect(function()
     if codeInput.Text ~= "" then
         statusLabel.Text = "Status: Executing..."
         executeCode(codeInput.Text)
-        statusLabel.Text = "Status: Execution complete"
-        task.wait(1)
-        statusLabel.Text = "Status: Ready"
+        if not runningLoop then
+            statusLabel.Text = "Status: Execution complete"
+            task.wait(1)
+            statusLabel.Text = "Status: Ready"
+        end
     end
 end)
 
 -- Toggle loop button
 toggleLoopButton.MouseButton1Click:Connect(function()
-    if codeInput.Text == "" then return end
+    if codeInput.Text == "" then 
+        statusLabel.Text = "Status: No code to execute"
+        task.wait(1)
+        statusLabel.Text = "Status: Ready"
+        return 
+    end
     
     if runningLoop then
         -- Stop the loop
         runningLoop = false
-        if loopThread then
-            task.cancel(loopThread)
-            loopThread = nil
-        end
+        if loopThread then task.cancel(loopThread) end
+        if cooldownThread then task.cancel(cooldownThread) end
         toggleLoopButton.Text = "Start Loop"
         toggleLoopButton.BackgroundColor3 = Color3.fromRGB(60, 120, 80)
         statusLabel.Text = "Status: Loop stopped"
+        cooldownLabel.Visible = false
     else
         -- Start the loop
-        validateDelay()
-        runningLoop = true
-        toggleLoopButton.Text = "Stop Loop"
-        toggleLoopButton.BackgroundColor3 = Color3.fromRGB(120, 60, 80)
-        statusLabel.Text = "Status: Loop running..."
-        
-        loopThread = task.spawn(function()
-            while runningLoop do
-                executeCode(codeInput.Text)
-                task.wait(currentDelay)
-            end
-        end)
+        if validateDelay() then
+            runningLoop = true
+            toggleLoopButton.Text = "Stop Loop"
+            toggleLoopButton.BackgroundColor3 = Color3.fromRGB(120, 60, 80)
+            statusLabel.Text = "Status: Loop running"
+            cooldownLabel.Visible = true
+            lastExecutionTime = os.clock()
+            
+            loopThread = task.spawn(function()
+                while runningLoop do
+                    executeCode(codeInput.Text)
+                    task.wait(currentDelay)
+                end
+            end)
+            
+            cooldownThread = task.spawn(updateCooldown)
+        end
     end
 end)
 
@@ -238,7 +297,7 @@ end)
 hideButton.MouseButton1Click:Connect(function()
     contentFrame.Visible = not contentFrame.Visible
     if contentFrame.Visible then
-        frame.Size = UDim2.new(0, 350, 0, 300)
+        frame.Size = UDim2.new(0, 350, 0, 350)
         hideButton.Text = "_"
     else
         frame.Size = UDim2.new(0, 350, 0, 30)
@@ -248,40 +307,41 @@ end)
 
 -- Close button functionality
 closeButton.MouseButton1Click:Connect(function()
-    -- Stop any running loop
     if runningLoop then
         runningLoop = false
-        if loopThread then
-            task.cancel(loopThread)
-        end
+        if loopThread then task.cancel(loopThread) end
+        if cooldownThread then task.cancel(cooldownThread) end
     end
     gui:Destroy()
 end)
 
--- Dragging functionality
-local dragStartPos
-local frameStartPos
+-- Improved dragging functionality
+local dragStartPos, frameStartPos
 
 titleBar.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        dragStartPos = input.Position
-        frameStartPos = frame.Position
-        input.Changed:Connect(function()
+        isDragging = true
+        dragStartPos = Vector2.new(input.Position.X, input.Position.Y)
+        frameStartPos = Vector2.new(frame.AbsolutePosition.X, frame.AbsolutePosition.Y)
+        
+        -- Capture the input even if mouse leaves the frame
+        local conn
+        conn = input.Changed:Connect(function()
             if input.UserInputState == Enum.UserInputState.End then
-                dragStartPos = nil
+                isDragging = false
+                conn:Disconnect()
             end
         end)
     end
 end)
 
-titleBar.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement and dragStartPos then
-        local delta = input.Position - dragStartPos
+UserInputService.InputChanged:Connect(function(input)
+    if isDragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local mousePos = Vector2.new(input.Position.X, input.Position.Y)
+        local delta = mousePos - dragStartPos
         frame.Position = UDim2.new(
-            frameStartPos.X.Scale, 
-            frameStartPos.X.Offset + delta.X,
-            frameStartPos.Y.Scale,
-            frameStartPos.Y.Offset + delta.Y
+            0, frameStartPos.X + delta.X,
+            0, frameStartPos.Y + delta.Y
         )
     end
 end)

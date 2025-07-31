@@ -1,18 +1,20 @@
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UserInputService = game:GetService("UserInputService")
 
 -- Create the GUI
 local gui = Instance.new("ScreenGui")
-gui.Name = "ClimbEventGUI"
+gui.Name = "CodeExecutor"
 gui.Parent = player:WaitForChild("PlayerGui")
 
 -- Main frame
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 200, 0, 120)
-frame.Position = UDim2.new(0.5, -100, 1, -130) -- Bottom center
-frame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+frame.Size = UDim2.new(0, 350, 0, 300)
+frame.Position = UDim2.new(0.5, -175, 0.5, -150) -- Center
+frame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
 frame.BorderSizePixel = 0
+frame.Active = true
+frame.ClipsDescendants = true
 frame.Parent = gui
 
 -- Add rounded corners
@@ -20,98 +22,266 @@ local corner = Instance.new("UICorner")
 corner.CornerRadius = UDim.new(0, 8)
 corner.Parent = frame
 
--- Title
+-- Title bar (draggable area)
+local titleBar = Instance.new("Frame")
+titleBar.Size = UDim2.new(1, 0, 0, 30)
+titleBar.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+titleBar.BorderSizePixel = 0
+titleBar.Parent = frame
+
+local titleCorner = Instance.new("UICorner")
+titleCorner.CornerRadius = UDim.new(0, 8)
+titleCorner.Parent = titleBar
+
+-- Title text
 local title = Instance.new("TextLabel")
-title.Text = "Climb Event Controller"
-title.Size = UDim2.new(1, 0, 0, 25)
+title.Text = "Code Executor (Drag Here)"
+title.Size = UDim2.new(1, -60, 1, 0)
 title.BackgroundTransparency = 1
 title.TextColor3 = Color3.new(1, 1, 1)
 title.Font = Enum.Font.SourceSansBold
-title.Parent = frame
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.Parent = titleBar
+
+-- Control buttons (minimize and close)
+local hideButton = Instance.new("TextButton")
+hideButton.Text = "_"
+hideButton.Size = UDim2.new(0, 25, 0, 25)
+hideButton.Position = UDim2.new(1, -55, 0, 2)
+hideButton.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
+hideButton.TextColor3 = Color3.new(1, 1, 1)
+hideButton.Font = Enum.Font.SourceSansBold
+hideButton.Parent = titleBar
+
+local closeButton = Instance.new("TextButton")
+closeButton.Text = "X"
+closeButton.Size = UDim2.new(0, 25, 0, 25)
+closeButton.Position = UDim2.new(1, -25, 0, 2)
+closeButton.BackgroundColor3 = Color3.fromRGB(120, 50, 50)
+closeButton.TextColor3 = Color3.new(1, 1, 1)
+closeButton.Font = Enum.Font.SourceSansBold
+closeButton.Parent = titleBar
+
+-- Content frame
+local contentFrame = Instance.new("Frame")
+contentFrame.Size = UDim2.new(1, 0, 1, -30)
+contentFrame.Position = UDim2.new(0, 0, 0, 30)
+contentFrame.BackgroundTransparency = 1
+contentFrame.Parent = frame
+
+-- Code input
+local codeLabel = Instance.new("TextLabel")
+codeLabel.Text = "Code to execute:"
+codeLabel.Size = UDim2.new(0.9, 0, 0, 20)
+codeLabel.Position = UDim2.new(0.05, 0, 0, 5)
+codeLabel.BackgroundTransparency = 1
+codeLabel.TextColor3 = Color3.new(1, 1, 1)
+codeLabel.TextXAlignment = Enum.TextXAlignment.Left
+codeLabel.Parent = contentFrame
+
+local codeInput = Instance.new("TextBox")
+codeInput.PlaceholderText = "Enter Lua code here"
+codeInput.Size = UDim2.new(0.9, 0, 0, 150)
+codeInput.Position = UDim2.new(0.05, 0, 0, 25)
+codeInput.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+codeInput.TextColor3 = Color3.new(1, 1, 1)
+codeInput.Font = Enum.Font.SourceSans
+codeInput.TextSize = 14
+codeInput.TextXAlignment = Enum.TextXAlignment.Left
+codeInput.TextYAlignment = Enum.TextYAlignment.Top
+codeInput.TextWrapped = true
+codeInput.MultiLine = true
+codeInput.ClearTextOnFocus = false
+codeInput.Parent = contentFrame
 
 -- Delay input
 local delayLabel = Instance.new("TextLabel")
-delayLabel.Text = "Delay (seconds):"
-delayLabel.Size = UDim2.new(0.9, 0, 0, 20)
-delayLabel.Position = UDim2.new(0.05, 0, 0.25, 0)
+delayLabel.Text = "Loop delay (seconds):"
+delayLabel.Size = UDim2.new(0.45, 0, 0, 20)
+delayLabel.Position = UDim2.new(0.05, 0, 0, 185)
 delayLabel.BackgroundTransparency = 1
 delayLabel.TextColor3 = Color3.new(1, 1, 1)
 delayLabel.TextXAlignment = Enum.TextXAlignment.Left
-delayLabel.Parent = frame
+delayLabel.Parent = contentFrame
 
 local delayInput = Instance.new("TextBox")
 delayInput.PlaceholderText = "0.1"
 delayInput.Text = "0.1"
-delayInput.Size = UDim2.new(0.9, 0, 0, 25)
-delayInput.Position = UDim2.new(0.05, 0, 0.45, 0)
-delayInput.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+delayInput.Size = UDim2.new(0.45, 0, 0, 25)
+delayInput.Position = UDim2.new(0.05, 0, 0, 205)
+delayInput.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
 delayInput.TextColor3 = Color3.new(1, 1, 1)
-delayInput.Parent = frame
+delayInput.Parent = contentFrame
 
--- Toggle button
-local toggleButton = Instance.new("TextButton")
-toggleButton.Text = "START"
-toggleButton.Size = UDim2.new(0.9, 0, 0, 30)
-toggleButton.Position = UDim2.new(0.05, 0, 0.75, 0)
-toggleButton.BackgroundColor3 = Color3.fromRGB(50, 120, 50)
-toggleButton.TextColor3 = Color3.new(1, 1, 1)
-toggleButton.Parent = frame
+-- Action buttons
+local executeOnceButton = Instance.new("TextButton")
+executeOnceButton.Text = "Execute Once"
+executeOnceButton.Size = UDim2.new(0.4, 0, 0, 30)
+executeOnceButton.Position = UDim2.new(0.55, 0, 0, 185)
+executeOnceButton.BackgroundColor3 = Color3.fromRGB(60, 80, 120)
+executeOnceButton.TextColor3 = Color3.new(1, 1, 1)
+executeOnceButton.Parent = contentFrame
 
--- Add rounded corners to input and button
+local toggleLoopButton = Instance.new("TextButton")
+toggleLoopButton.Text = "Start Loop"
+toggleLoopButton.Size = UDim2.new(0.4, 0, 0, 30)
+toggleLoopButton.Position = UDim2.new(0.55, 0, 0, 220)
+toggleLoopButton.BackgroundColor3 = Color3.fromRGB(60, 120, 80)
+toggleLoopButton.TextColor3 = Color3.new(1, 1, 1)
+toggleLoopButton.Parent = contentFrame
+
+-- Status label
+local statusLabel = Instance.new("TextLabel")
+statusLabel.Text = "Status: Ready"
+statusLabel.Size = UDim2.new(0.9, 0, 0, 20)
+statusLabel.Position = UDim2.new(0.05, 0, 0, 240)
+statusLabel.BackgroundTransparency = 1
+statusLabel.TextColor3 = Color3.new(1, 1, 1)
+statusLabel.TextXAlignment = Enum.TextXAlignment.Left
+statusLabel.Parent = contentFrame
+
+-- Add rounded corners to all elements
 local inputCorner = Instance.new("UICorner")
 inputCorner.CornerRadius = UDim.new(0, 4)
-inputCorner.Parent = delayInput
+inputCorner.Parent = codeInput
+inputCorner:Clone().Parent = delayInput
 
 local buttonCorner = Instance.new("UICorner")
 buttonCorner.CornerRadius = UDim.new(0, 4)
-buttonCorner.Parent = toggleButton
+buttonCorner.Parent = executeOnceButton
+buttonCorner:Clone().Parent = toggleLoopButton
+buttonCorner:Clone().Parent = hideButton
+buttonCorner:Clone().Parent = closeButton
 
--- Remote setup
-local args = {
-	1132,
-	0.1536744532156537
-}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("_Index"):WaitForChild("sleitnick_knit@1.5.1"):WaitForChild("knit"):WaitForChild("Services"):WaitForChild("ClimbService"):WaitForChild("RE"):WaitForChild("ClimbEndEvent"):FireServer(unpack(args))
-
-
--- Loop control
-local running = false
+-- Variables
+local runningLoop = false
 local currentDelay = 0.1
+local loopThread = nil
+
+-- Function to safely execute code
+local function executeCode(code)
+    local success, errorMsg = pcall(function()
+        local func, err = loadstring(code)
+        if func then
+            func()
+        else
+            error(err)
+        end
+    end)
+    
+    if not success then
+        statusLabel.Text = "Error: " .. tostring(errorMsg)
+        task.wait(2)
+        statusLabel.Text = "Status: Ready"
+    end
+end
 
 -- Input validation
-local function validateInput()
-    local text = delayInput.Text
-    local number = tonumber(text)
-    
-    if number and number > 0 then
-        currentDelay = number
+local function validateDelay()
+    local delay = tonumber(delayInput.Text)
+    if delay and delay > 0 then
+        currentDelay = delay
         return true
     else
-        delayInput.Text = tostring(currentDelay)
+        statusLabel.Text = "Invalid delay - using 0.1s"
+        delayInput.Text = "0.1"
+        currentDelay = 0.1
+        task.wait(2)
+        statusLabel.Text = "Status: Ready"
         return false
     end
 end
 
-delayInput.FocusLost:Connect(function()
-    validateInput()
+-- Execute once button
+executeOnceButton.MouseButton1Click:Connect(function()
+    if codeInput.Text ~= "" then
+        statusLabel.Text = "Status: Executing..."
+        executeCode(codeInput.Text)
+        statusLabel.Text = "Status: Execution complete"
+        task.wait(1)
+        statusLabel.Text = "Status: Ready"
+    end
 end)
 
--- Toggle functionality
-toggleButton.MouseButton1Click:Connect(function()
-    if validateInput() then
-        running = not running
-        if running then
-            toggleButton.Text = "STOP"
-            toggleButton.BackgroundColor3 = Color3.fromRGB(120, 50, 50)
-            
-            -- Start firing loop
-            while running do
-                remoteEvent:FireServer(unpack(args))
+-- Toggle loop button
+toggleLoopButton.MouseButton1Click:Connect(function()
+    if codeInput.Text == "" then return end
+    
+    if runningLoop then
+        -- Stop the loop
+        runningLoop = false
+        if loopThread then
+            task.cancel(loopThread)
+            loopThread = nil
+        end
+        toggleLoopButton.Text = "Start Loop"
+        toggleLoopButton.BackgroundColor3 = Color3.fromRGB(60, 120, 80)
+        statusLabel.Text = "Status: Loop stopped"
+    else
+        -- Start the loop
+        validateDelay()
+        runningLoop = true
+        toggleLoopButton.Text = "Stop Loop"
+        toggleLoopButton.BackgroundColor3 = Color3.fromRGB(120, 60, 80)
+        statusLabel.Text = "Status: Loop running..."
+        
+        loopThread = task.spawn(function()
+            while runningLoop do
+                executeCode(codeInput.Text)
                 task.wait(currentDelay)
             end
-        else
-            toggleButton.Text = "START"
-            toggleButton.BackgroundColor3 = Color3.fromRGB(50, 120, 50)
+        end)
+    end
+end)
+
+-- Hide button functionality
+hideButton.MouseButton1Click:Connect(function()
+    contentFrame.Visible = not contentFrame.Visible
+    if contentFrame.Visible then
+        frame.Size = UDim2.new(0, 350, 0, 300)
+        hideButton.Text = "_"
+    else
+        frame.Size = UDim2.new(0, 350, 0, 30)
+        hideButton.Text = "+"
+    end
+end)
+
+-- Close button functionality
+closeButton.MouseButton1Click:Connect(function()
+    -- Stop any running loop
+    if runningLoop then
+        runningLoop = false
+        if loopThread then
+            task.cancel(loopThread)
         end
+    end
+    gui:Destroy()
+end)
+
+-- Dragging functionality
+local dragStartPos
+local frameStartPos
+
+titleBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragStartPos = input.Position
+        frameStartPos = frame.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragStartPos = nil
+            end
+        end)
+    end
+end)
+
+titleBar.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement and dragStartPos then
+        local delta = input.Position - dragStartPos
+        frame.Position = UDim2.new(
+            frameStartPos.X.Scale, 
+            frameStartPos.X.Offset + delta.X,
+            frameStartPos.Y.Scale,
+            frameStartPos.Y.Offset + delta.Y
+        )
     end
 end)

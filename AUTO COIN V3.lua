@@ -410,17 +410,21 @@ local function InitializeEventHandlers()
     end)
 
     -- Minimize button
-    GUI.MinimizeButton.MouseButton1Click:Connect(function()
-        local minimized = GUI.Frame.Size == UDim2.new(0, 70, 0, 25)
-        GUI.MinimizeButton.Text = minimized and "-" or "+"
-        GUI.Frame.Size = minimized and UDim2.new(0, 200, 0, 250) or UDim2.new(0, 70, 0, 25)
-        
-        for _, child in pairs(GUI.Frame:GetChildren()) do
-            if child ~= TitleBar then
-                child.Visible = minimized
-            end
-        end
-    end)
+GUI.MinimizeButton.MouseButton1Click:Connect(function()
+    State.minimized = not State.minimized
+    
+    if State.minimized then
+        -- Saat minimize, sembunyikan semua kecuali title bar
+        GUI.Frame.Size = UDim2.new(0, 70, 0, 30)  -- Hanya title bar yang terlihat
+        GUI.MinimizeButton.Text = "+"
+        GUI.Content.Visible = false
+    else
+        -- Saat restore, tampilkan kembali semua
+        GUI.Frame.Size = UDim2.new(0, 220, 0, 270)
+        GUI.MinimizeButton.Text = "-"
+        GUI.Content.Visible = true
+    end
+end)
 
     -- Close button
     GUI.CloseButton.MouseButton1Click:Connect(function()

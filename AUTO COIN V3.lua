@@ -414,16 +414,33 @@ GUI.MinimizeButton.MouseButton1Click:Connect(function()
     State.minimized = not State.minimized
     
     if State.minimized then
-        -- Saat minimize
-        GUI.Frame.Size = UDim2.new(0, 70, 0, 30) -- Hanya title bar
+        -- When minimizing
+        GUI.Frame.Size = UDim2.new(0, 70, 0, 30) -- Only show title bar
         GUI.MinimizeButton.Text = "+"
         
-        -- Sembunyikan semua children kecuali TitleBar
+        -- Hide all content except title bar and its buttons
         for _, child in pairs(GUI.Frame:GetChildren()) do
-            if child ~= GUI.TitleBar then
+            if child ~= GUI.TitleBar and child ~= GUI.MinimizeButton and child ~= GUI.CloseButton then
                 child.Visible = false
             end
         end
+        
+        -- Ensure title bar and buttons remain visible
+        GUI.TitleBar.Visible = true
+        GUI.MinimizeButton.Visible = true
+        GUI.CloseButton.Visible = true
+    else
+        -- When restoring
+        GUI.Frame.Size = UDim2.new(0, 200, 0, 250) -- Original size
+        
+        -- Show all content
+        for _, child in pairs(GUI.Frame:GetChildren()) do
+            child.Visible = true
+        end
+        
+        GUI.MinimizeButton.Text = "-"
+    end
+end)
         
         -- Pastikan TitleBar dan tombolnya tetap visible
         GUI.TitleBar.Visible = true

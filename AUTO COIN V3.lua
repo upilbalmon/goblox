@@ -17,7 +17,7 @@ local RunService = game:GetService("RunService")
 local PAUSE_INTERVAL = 10 * 60  -- 10 minutes
 local PAUSE_DURATION = 30       -- 30 seconds
 local WIN_DELAY = 15            -- 10 seconds for Auto Win
-local TOKEN_DELAY = 15        n -- 10 seconds for Auto Magic Token
+local TOKEN_DELAY = 15          -- 10 seconds for Auto Magic Token
 local DEFAULT_HEIGHT = 5000
 local DEFAULT_DELAY = 5
 
@@ -61,7 +61,7 @@ local function CreateGUI()
 
     -- Compact Main Window
     local Frame = Instance.new("Frame")
-    Frame.Size = UDim2.new(0, 180, 0, 220)
+    Frame.Size = UDim2.new(0, 180, 0, 200)
     Frame.Position = UDim2.new(0.5, -90, 0.5, -100)
     Frame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
     Frame.BackgroundTransparency = 0.1
@@ -318,11 +318,13 @@ local function UpdateStatus()
         GUI.CoinStatus.Text = "● Coin: READY!"
         GUI.CoinStatus.TextColor3 = Color3.new(0.5, 1, 0.5)
         State.isReady = true
+        GUI.StartStopButton.Text = "AUTO COIN READY"
         GUI.StartStopButton.BackgroundColor3 = Color3.fromRGB(0, 175, 200)
     else
         GUI.CoinStatus.Text = "● Coin: WAITING"
         GUI.CoinStatus.TextColor3 = Color3.new(1, 0.5, 0.5)
         State.isReady = false
+        GUI.StartStopButton.Text = "AUTO COIN OFF"
         GUI.StartStopButton.BackgroundColor3 = Color3.fromRGB(50, 50, 55)
     end
 
@@ -412,13 +414,13 @@ local function InitializeEventHandlers()
         if State.isReady then
             State.running = not State.running
             if State.running then
-                GUI.StartStopButton.Text = "COIN ON"
-                GUI.StartStopButton.BackgroundColor3 = Color3.fromRGB(0, 175, 200)
+                GUI.StartStopButton.Text = "AUTO COIN ON"
+                GUI.StartStopButton.BackgroundColor3 = Color3.fromRGB(0, 200, 50)
                 State.lastWinTime = os.time()
                 State.lastTokenTime = os.time()
                 coroutine.wrap(RunLoop)()
             else
-                GUI.StartStopButton.Text = "COIN OFF"
+                GUI.StartStopButton.Text = "AUTO COIN OFF"
                 GUI.StartStopButton.BackgroundColor3 = Color3.fromRGB(50, 50, 55)
                 GUI.MainStatus.Text = "READY TO START!"
             end
@@ -431,7 +433,7 @@ local function InitializeEventHandlers()
             State.autoWinEnabled = not State.autoWinEnabled
             if State.autoWinEnabled then
                 GUI.AutoWinToggle.Text = "WIN ON"
-                GUI.AutoWinToggle.BackgroundColor3 = Color3.fromRGB(0, 175, 200)
+                GUI.AutoWinToggle.BackgroundColor3 = Color3.fromRGB(200, 50, 0)
                 State.lastWinTime = os.time()
             else
                 GUI.AutoWinToggle.Text = "WIN OFF"
@@ -445,11 +447,11 @@ local function InitializeEventHandlers()
         if State.magicTokenID then
             State.autoTokenEnabled = not State.autoTokenEnabled
             if State.autoTokenEnabled then
-                GUI.AutoTokenToggle.Text = "TOKEN ON"
-                GUI.AutoTokenToggle.BackgroundColor3 = Color3.fromRGB(0, 175, 200)
+                GUI.AutoTokenToggle.Text = "MAGIC ON"
+                GUI.AutoTokenToggle.BackgroundColor3 = Color3.fromRGB(200, 50, 0)
                 State.lastTokenTime = os.time()
             else
-                GUI.AutoTokenToggle.Text = "TOKEN OFF"
+                GUI.AutoTokenToggle.Text = "MAGIC OFF"
                 GUI.AutoTokenToggle.BackgroundColor3 = Color3.fromRGB(50, 50, 55)
             end
         end

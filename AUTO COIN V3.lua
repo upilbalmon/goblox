@@ -61,7 +61,7 @@ local function CreateGUI()
 
     -- Compact Main Window
     local Frame = Instance.new("Frame")
-    Frame.Size = UDim2.new(0, 180, 0, 200)
+    Frame.Size = UDim2.new(0, 180, 0, 220)
     Frame.Position = UDim2.new(0.5, -90, 0.5, -100)
     Frame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
     Frame.BackgroundTransparency = 0.1

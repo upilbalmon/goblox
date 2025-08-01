@@ -215,7 +215,7 @@ local function CreateGUI()
     local StartStopButton = Instance.new("TextButton")
     StartStopButton.Size = UDim2.new(1, 0, 0.4, 0)
     StartStopButton.Position = UDim2.new(0, 0, 0, 0)
-    StartStopButton.Text = "START COIN"
+    StartStopButton.Text = "AUTO COIN"
     StartStopButton.Font = Enum.Font.SourceSans
     StartStopButton.TextSize = 14
     StartStopButton.TextColor3 = Color3.new(1, 1, 1)
@@ -237,7 +237,7 @@ local function CreateGUI()
     local AutoTokenToggle = Instance.new("TextButton")
     AutoTokenToggle.Size = UDim2.new(0.48, 0, 0.5, 0)
     AutoTokenToggle.Position = UDim2.new(0.52, 0, 0.5, 0)
-    AutoTokenToggle.Text = "AUTO TOKEN"
+    AutoTokenToggle.Text = "AUTO MAGIC"
     AutoTokenToggle.Font = Enum.Font.SourceSans
     AutoTokenToggle.TextSize = 12
     AutoTokenToggle.TextColor3 = Color3.new(1, 1, 1)
@@ -319,13 +319,13 @@ local function UpdateStatus()
         GUI.CoinStatus.TextColor3 = Color3.new(0.5, 1, 0.5)
         State.isReady = true
         GUI.StartStopButton.Text = "AUTO COIN READY"
-        GUI.StartStopButton.BackgroundColor3 = Color3.fromRGB(0, 175, 200)
+        GUI.StartStopButton.BackgroundColor3 = Color3.fromRGB(50, 50, 0)
     else
         GUI.CoinStatus.Text = "● Coin: WAITING"
         GUI.CoinStatus.TextColor3 = Color3.new(1, 0.5, 0.5)
         State.isReady = false
-        GUI.StartStopButton.Text = "AUTO COIN OFF"
-        GUI.StartStopButton.BackgroundColor3 = Color3.fromRGB(50, 50, 55)
+        GUI.StartStopButton.Text = "AUTO COIN WAITING"
+        GUI.StartStopButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
     end
 
     -- Update win status

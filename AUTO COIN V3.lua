@@ -31,7 +31,7 @@ local pauseDuration = 30
 local lastLoopTime = 0
 local nextLoopTime = 0
 local lastWinTime = 0
-local winDelay = 10 -- Delay tetap 10 detik untuk Auto Win
+local winDelay = 15 -- Delay tetap 10 detik untuk Auto Win
 
 -- GUI Setup
 local MainFrame = Instance.new("ScreenGui")

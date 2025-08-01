@@ -61,7 +61,7 @@ local function CreateGUI()
 
     -- Compact Main Window
     local Frame = Instance.new("Frame")
-    Frame.Size = UDim2.new(0, 180, 0, 200)
+    Frame.Size = UDim2.new(0, 180, 0, 220)
     Frame.Position = UDim2.new(0.5, -90, 0.5, -100)
     Frame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
     Frame.BackgroundTransparency = 0.1
@@ -315,30 +315,30 @@ end
 local function UpdateStatus()
     -- Update coin status
     if State.jumpID and State.landingID then
-        GUI.CoinStatus.Text = "● Coin: READY!"
+        GUI.CoinStatus.Text = "● Auto Coin: READY!"
         GUI.CoinStatus.TextColor3 = Color3.new(0.5, 1, 0.5)
         State.isReady = true
     else
-        GUI.CoinStatus.Text = "● Coin: WAITING"
+        GUI.CoinStatus.Text = "● Auto Coin: WAITING . . ."
         GUI.CoinStatus.TextColor3 = Color3.new(1, 0.5, 0.5)
         State.isReady = false
     end
 
     -- Update win status
     if State.winID then
-        GUI.WinStatus.Text = "● Win: READY!"
+        GUI.WinStatus.Text = "● Auto Win: READY!"
         GUI.WinStatus.TextColor3 = Color3.new(0.5, 1, 0.5)
     else
-        GUI.WinStatus.Text = "● Win: WAITING"
+        GUI.WinStatus.Text = "● Auto Win: WAITING . . ."
         GUI.WinStatus.TextColor3 = Color3.new(1, 0.5, 0.5)
     end
 
     -- Update token status
     if State.magicTokenID then
-        GUI.TokenStatus.Text = "● Token: READY!"
+        GUI.TokenStatus.Text = "● Auto Magic Token: READY!"
         GUI.TokenStatus.TextColor3 = Color3.new(0.5, 1, 0.5)
     else
-        GUI.TokenStatus.Text = "● Token: WAITING"
+        GUI.TokenStatus.Text = "● Auto Magic Token: WAITING . . ."
         GUI.TokenStatus.TextColor3 = Color3.new(1, 0.5, 0.5)
     end
 

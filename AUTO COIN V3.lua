@@ -16,10 +16,10 @@ local RunService = game:GetService("RunService")
 ------ CONSTANTS ------
 local PAUSE_INTERVAL = 10 * 60  -- 10 minutes
 local PAUSE_DURATION = 30       -- 30 seconds
-local WIN_DELAY = 10            -- 10 seconds for Auto Win
-local TOKEN_DELAY = 10          -- 10 seconds for Auto Magic Token
-local DEFAULT_HEIGHT = 6000
-local DEFAULT_DELAY = 3
+local WIN_DELAY = 15            -- 10 seconds for Auto Win
+local TOKEN_DELAY = 15        n -- 10 seconds for Auto Magic Token
+local DEFAULT_HEIGHT = 5000
+local DEFAULT_DELAY = 5
 
 ------ STATE MANAGEMENT ------
 local State = {
@@ -318,13 +318,11 @@ local function UpdateStatus()
         GUI.CoinStatus.Text = "● Coin: READY!"
         GUI.CoinStatus.TextColor3 = Color3.new(0.5, 1, 0.5)
         State.isReady = true
-        GUI.StartStopButton.Text = "STOP COIN"
         GUI.StartStopButton.BackgroundColor3 = Color3.fromRGB(0, 175, 200)
     else
         GUI.CoinStatus.Text = "● Coin: WAITING"
         GUI.CoinStatus.TextColor3 = Color3.new(1, 0.5, 0.5)
         State.isReady = false
-        GUI.StartStopButton.Text = "START COIN"
         GUI.StartStopButton.BackgroundColor3 = Color3.fromRGB(50, 50, 55)
     end
 
@@ -414,13 +412,13 @@ local function InitializeEventHandlers()
         if State.isReady then
             State.running = not State.running
             if State.running then
-                GUI.StartStopButton.Text = "STOP COIN"
+                GUI.StartStopButton.Text = "COIN ON"
                 GUI.StartStopButton.BackgroundColor3 = Color3.fromRGB(0, 175, 200)
                 State.lastWinTime = os.time()
                 State.lastTokenTime = os.time()
                 coroutine.wrap(RunLoop)()
             else
-                GUI.StartStopButton.Text = "START COIN"
+                GUI.StartStopButton.Text = "COIN OFF"
                 GUI.StartStopButton.BackgroundColor3 = Color3.fromRGB(50, 50, 55)
                 GUI.MainStatus.Text = "READY TO START!"
             end

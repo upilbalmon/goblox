@@ -1,5 +1,49 @@
------- GUI CREATION (Minimalist Version) ------
-local function CreateMinimalistGUI()
+--[[
+    AUTO COIN V3 - Minimalist Complete Version
+    Features:
+    1. Auto Claim Coin with customizable height/delay
+    2. Auto Win with 10-second delay
+    3. Auto Magic Token with 10-second delay
+    4. Minimalist UI design
+    5. Fully functional minimize button
+--]]
+
+------ SERVICES ------
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+------ CONSTANTS ------
+local PAUSE_INTERVAL = 10 * 60  -- 10 minutes
+local PAUSE_DURATION = 30       -- 30 seconds
+local WIN_DELAY = 10            -- 10 seconds for Auto Win
+local TOKEN_DELAY = 10          -- 10 seconds for Auto Magic Token
+local DEFAULT_HEIGHT = 6000
+local DEFAULT_DELAY = 3
+
+------ STATE MANAGEMENT ------
+local State = {
+    jumpID = nil,
+    landingID = nil,
+    winID = nil,
+    magicTokenID = nil,
+    isReady = false,
+    running = false,
+    autoWinEnabled = false,
+    autoTokenEnabled = false,
+    runTime = 0,
+    lastLoopTime = 0,
+    nextLoopTime = 0,
+    lastWinTime = 0,
+    lastTokenTime = 0,
+    hookEnabled = true,
+    minimized = false
+}
+
+------ MINIMALIST GUI CREATION ------
+local GUI = {}
+
+local function CreateGUI()
     local player = Players.LocalPlayer
     local playerGui = player:WaitForChild("PlayerGui")
     
@@ -15,17 +59,17 @@ local function CreateMinimalistGUI()
     MainFrame.ResetOnSpawn = false
     MainFrame.DisplayOrder = 999
 
-    -- Main Window Frame (Compact Design)
+    -- Compact Main Window
     local Frame = Instance.new("Frame")
-    Frame.Size = UDim2.new(0, 180, 0, 200) -- More compact size
+    Frame.Size = UDim2.new(0, 180, 0, 200)
     Frame.Position = UDim2.new(0.5, -90, 0.5, -100)
     Frame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
-    Frame.BackgroundTransparency = 0.1 -- Less transparent
+    Frame.BackgroundTransparency = 0.1
     Frame.Parent = MainFrame
     Frame.Draggable = true
     Frame.Active = true
 
-    -- Title Bar (Minimalist)
+    -- Minimalist Title Bar
     local TitleBar = Instance.new("Frame")
     TitleBar.Size = UDim2.new(1, 0, 0, 25)
     TitleBar.Position = UDim2.new(0, 0, 0, 0)
@@ -43,26 +87,30 @@ local function CreateMinimalistGUI()
     TitleText.TextSize = 14
     TitleText.Parent = TitleBar
 
-    -- Minimalist Control Buttons
-    local function CreateMiniButton(text, size, pos, color)
-        local btn = Instance.new("TextButton")
-        btn.Size = size
-        btn.Position = pos
-        btn.Text = text
-        btn.TextColor3 = Color3.new(1,1,1)
-        btn.BackgroundColor3 = color
-        btn.BorderSizePixel = 0
-        btn.Font = Enum.Font.SourceSans
-        btn.TextSize = 12
-        btn.Parent = Frame
-        return btn
-    end
+    -- Control Buttons
+    local CloseButton = Instance.new("TextButton")
+    CloseButton.Size = UDim2.new(0, 25, 0, 25)
+    CloseButton.Position = UDim2.new(1, -25, 0, 0)
+    CloseButton.Text = "X"
+    CloseButton.Font = Enum.Font.SourceSans
+    CloseButton.TextSize = 14
+    CloseButton.TextColor3 = Color3.new(1, 1, 1)
+    CloseButton.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
+    CloseButton.BorderSizePixel = 0
+    CloseButton.Parent = TitleBar
 
-    -- Close and Minimize Buttons
-    local CloseButton = CreateMiniButton("X", UDim2.new(0, 25, 0, 25), UDim2.new(1, -25, 0, 0), Color3.fromRGB(180, 0, 0))
-    local MinimizeButton = CreateMiniButton("-", UDim2.new(0, 25, 0, 25), UDim2.new(1, -50, 0, 0), Color3.fromRGB(40, 40, 45))
+    local MinimizeButton = Instance.new("TextButton")
+    MinimizeButton.Size = UDim2.new(0, 25, 0, 25)
+    MinimizeButton.Position = UDim2.new(1, -50, 0, 0)
+    MinimizeButton.Text = "-"
+    MinimizeButton.Font = Enum.Font.SourceSans
+    MinimizeButton.TextSize = 14
+    MinimizeButton.TextColor3 = Color3.new(1, 1, 1)
+    MinimizeButton.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+    MinimizeButton.BorderSizePixel = 0
+    MinimizeButton.Parent = TitleBar
 
-    -- Compact Content Area
+    -- Content Area
     local Content = Instance.new("Frame")
     Content.Name = "Content"
     Content.Size = UDim2.new(1, -10, 1, -35)
@@ -70,7 +118,7 @@ local function CreateMinimalistGUI()
     Content.BackgroundTransparency = 1
     Content.Parent = Frame
 
-    -- Combined Input Fields
+    -- Compact Input Fields
     local InputContainer = Instance.new("Frame")
     InputContainer.Size = UDim2.new(1, 0, 0, 40)
     InputContainer.Position = UDim2.new(0, 0, 0, 0)
@@ -117,7 +165,7 @@ local function CreateMinimalistGUI()
     DelayTextBox.BorderSizePixel = 0
     DelayTextBox.Parent = InputContainer
 
-    -- Compact Status Indicators
+    -- Status Indicators
     local StatusContainer = Instance.new("Frame")
     StatusContainer.Size = UDim2.new(1, 0, 0, 45)
     StatusContainer.Position = UDim2.new(0, 0, 0, 45)
@@ -157,7 +205,7 @@ local function CreateMinimalistGUI()
     TokenStatus.TextXAlignment = Enum.TextXAlignment.Left
     TokenStatus.Parent = StatusContainer
 
-    -- Compact Control Buttons
+    -- Control Buttons
     local ButtonContainer = Instance.new("Frame")
     ButtonContainer.Size = UDim2.new(1, 0, 0, 70)
     ButtonContainer.Position = UDim2.new(0, 0, 0, 95)
@@ -210,48 +258,283 @@ local function CreateMinimalistGUI()
     MainStatus.Parent = Content
 
     -- Store references
-    GUI = {
-        MainFrame = MainFrame,
-        Frame = Frame,
-        Content = Content,
-        TitleBar = TitleBar,
-        MinimizeButton = MinimizeButton,
-        CloseButton = CloseButton,
-        HeightTextBox = HeightTextBox,
-        DelayTextBox = DelayTextBox,
-        CoinStatus = CoinStatus,
-        WinStatus = WinStatus,
-        TokenStatus = TokenStatus,
-        StartStopButton = StartStopButton,
-        AutoWinToggle = AutoWinToggle,
-        AutoTokenToggle = AutoTokenToggle,
-        MainStatus = MainStatus
-    }
+    GUI.MainFrame = MainFrame
+    GUI.Frame = Frame
+    GUI.Content = Content
+    GUI.TitleBar = TitleBar
+    GUI.TitleText = TitleText
+    GUI.MinimizeButton = MinimizeButton
+    GUI.CloseButton = CloseButton
+    GUI.HeightTextBox = HeightTextBox
+    GUI.DelayTextBox = DelayTextBox
+    GUI.CoinStatus = CoinStatus
+    GUI.WinStatus = WinStatus
+    GUI.TokenStatus = TokenStatus
+    GUI.StartStopButton = StartStopButton
+    GUI.AutoWinToggle = AutoWinToggle
+    GUI.AutoTokenToggle = AutoTokenToggle
+    GUI.MainStatus = MainStatus
 
     return GUI
 end
 
------- IMPROVED MINIMIZE FUNCTION ------
-GUI.MinimizeButton.MouseButton1Click:Connect(function()
-    State.minimized = not State.minimized
-    
-    if State.minimized then
-        -- Minimize to just title bar
-        GUI.Frame.Size = UDim2.new(0, 100, 0, 25)
-        GUI.MinimizeButton.Text = "+"
-        GUI.Content.Visible = false
-        
-        -- Center title text when minimized
-        GUI.TitleText.Position = UDim2.new(0.5, -25, 0, 0)
-        GUI.TitleText.TextXAlignment = Enum.TextXAlignment.Center
-    else
-        -- Restore to normal size
-        GUI.Frame.Size = UDim2.new(0, 180, 0, 200)
-        GUI.MinimizeButton.Text = "-"
-        GUI.Content.Visible = true
-        
-        -- Restore title text position
-        GUI.TitleText.Position = UDim2.new(0.2, 0, 0, 0)
-        GUI.TitleText.TextXAlignment = Enum.TextXAlignment.Left
+------ REMOTE EVENT FUNCTIONS ------
+local function SendRemoteEvent(eventName, ...)
+    local args = {eventName, ...}
+    ReplicatedStorage:WaitForChild("ProMgs"):WaitForChild("RemoteEvent"):FireServer(unpack(args))
+end
+
+local function SendJumpData()
+    if State.jumpID then
+        local height = tonumber(GUI.HeightTextBox.Text) or DEFAULT_HEIGHT
+        SendRemoteEvent("JumpResults", State.jumpID, height)
     end
-end)
+end
+
+local function SendLandingData()
+    if State.landingID then
+        SendRemoteEvent("LandingResults", State.landingID)
+    end
+end
+
+local function SendWinData()
+    if State.winID then
+        SendRemoteEvent("ClaimRooftopWinsReward", State.winID)
+        State.lastWinTime = os.time()
+    end
+end
+
+local function SendTokenData()
+    if State.magicTokenID then
+        SendRemoteEvent("ClaimRooftopMagicToken", State.magicTokenID)
+        State.lastTokenTime = os.time()
+    end
+end
+
+------ CORE LOGIC ------
+local function UpdateStatus()
+    -- Update coin status
+    if State.jumpID and State.landingID then
+        GUI.CoinStatus.Text = "● Coin: READY!"
+        GUI.CoinStatus.TextColor3 = Color3.new(0.5, 1, 0.5)
+        State.isReady = true
+        GUI.StartStopButton.Text = "STOP COIN"
+        GUI.StartStopButton.BackgroundColor3 = Color3.fromRGB(0, 175, 200)
+    else
+        GUI.CoinStatus.Text = "● Coin: WAITING"
+        GUI.CoinStatus.TextColor3 = Color3.new(1, 0.5, 0.5)
+        State.isReady = false
+        GUI.StartStopButton.Text = "START COIN"
+        GUI.StartStopButton.BackgroundColor3 = Color3.fromRGB(50, 50, 55)
+    end
+
+    -- Update win status
+    if State.winID then
+        GUI.WinStatus.Text = "● Win: READY!"
+        GUI.WinStatus.TextColor3 = Color3.new(0.5, 1, 0.5)
+    else
+        GUI.WinStatus.Text = "● Win: WAITING"
+        GUI.WinStatus.TextColor3 = Color3.new(1, 0.5, 0.5)
+    end
+
+    -- Update token status
+    if State.magicTokenID then
+        GUI.TokenStatus.Text = "● Token: READY!"
+        GUI.TokenStatus.TextColor3 = Color3.new(0.5, 1, 0.5)
+    else
+        GUI.TokenStatus.Text = "● Token: WAITING"
+        GUI.TokenStatus.TextColor3 = Color3.new(1, 0.5, 0.5)
+    end
+
+    GUI.MainStatus.Text = State.isReady and "READY TO START!" or "JUMP FROM THE TOWER FIRST!"
+end
+
+local function RunLoop()
+    while State.running and State.hookEnabled do
+        local internalDelay = tonumber(GUI.DelayTextBox.Text) or DEFAULT_DELAY
+        State.lastLoopTime = os.time()
+        State.nextLoopTime = State.lastLoopTime + internalDelay
+        
+        -- Execute coin actions
+        SendJumpData()
+        
+        -- Handle auto win with separate delay
+        if State.autoWinEnabled and os.time() - State.lastWinTime >= WIN_DELAY then
+            SendWinData()
+        end
+        
+        -- Handle auto token with separate delay
+        if State.autoTokenEnabled and os.time() - State.lastTokenTime >= TOKEN_DELAY then
+            SendTokenData()
+        end
+        
+        -- Update status during delay
+        while os.time() < State.nextLoopTime and State.running and State.hookEnabled do
+            local remaining = State.nextLoopTime - os.time()
+            local winRemaining = WIN_DELAY - (os.time() - State.lastWinTime)
+            local tokenRemaining = TOKEN_DELAY - (os.time() - State.lastTokenTime)
+            local statusText = string.format("Running (%.1fs)", remaining)
+            
+            if State.autoWinEnabled then
+                statusText = statusText..string.format(" | Win (%.1fs)", winRemaining > 0 and winRemaining or 0)
+            end
+            
+            if State.autoTokenEnabled then
+                statusText = statusText..string.format(" | Token (%.1fs)", tokenRemaining > 0 and tokenRemaining or 0)
+            end
+            
+            GUI.MainStatus.Text = statusText
+            task.wait(0.1)
+        end
+        
+        if not State.running or not State.hookEnabled then break end
+        
+        SendLandingData()
+        
+        -- Handle auto-pause system
+        State.runTime = State.runTime + (os.time() - State.lastLoopTime)
+        if State.runTime >= PAUSE_INTERVAL then
+            State.running = false
+            GUI.MainStatus.Text = "Pausing for 30 seconds..."
+            task.wait(PAUSE_DURATION)
+            State.runTime = 0
+            State.running = true
+        end
+    end
+    
+    if State.hookEnabled then
+        GUI.MainStatus.Text = State.isReady and "READY TO START!" or "JUMP FROM THE TOWER FIRST!"
+    end
+end
+
+------ EVENT HANDLERS ------
+local function InitializeEventHandlers()
+    -- Start/Stop button
+    GUI.StartStopButton.MouseButton1Click:Connect(function()
+        if State.isReady then
+            State.running = not State.running
+            if State.running then
+                GUI.StartStopButton.Text = "STOP COIN"
+                GUI.StartStopButton.BackgroundColor3 = Color3.fromRGB(0, 175, 200)
+                State.lastWinTime = os.time()
+                State.lastTokenTime = os.time()
+                coroutine.wrap(RunLoop)()
+            else
+                GUI.StartStopButton.Text = "START COIN"
+                GUI.StartStopButton.BackgroundColor3 = Color3.fromRGB(50, 50, 55)
+                GUI.MainStatus.Text = "READY TO START!"
+            end
+        end
+    end)
+
+    -- Auto Win toggle
+    GUI.AutoWinToggle.MouseButton1Click:Connect(function()
+        if State.winID then
+            State.autoWinEnabled = not State.autoWinEnabled
+            if State.autoWinEnabled then
+                GUI.AutoWinToggle.Text = "WIN ON"
+                GUI.AutoWinToggle.BackgroundColor3 = Color3.fromRGB(0, 175, 200)
+                State.lastWinTime = os.time()
+            else
+                GUI.AutoWinToggle.Text = "WIN OFF"
+                GUI.AutoWinToggle.BackgroundColor3 = Color3.fromRGB(50, 50, 55)
+            end
+        end
+    end)
+
+    -- Auto Token toggle
+    GUI.AutoTokenToggle.MouseButton1Click:Connect(function()
+        if State.magicTokenID then
+            State.autoTokenEnabled = not State.autoTokenEnabled
+            if State.autoTokenEnabled then
+                GUI.AutoTokenToggle.Text = "TOKEN ON"
+                GUI.AutoTokenToggle.BackgroundColor3 = Color3.fromRGB(0, 175, 200)
+                State.lastTokenTime = os.time()
+            else
+                GUI.AutoTokenToggle.Text = "TOKEN OFF"
+                GUI.AutoTokenToggle.BackgroundColor3 = Color3.fromRGB(50, 50, 55)
+            end
+        end
+    end)
+
+    -- Minimize button
+    GUI.MinimizeButton.MouseButton1Click:Connect(function()
+        State.minimized = not State.minimized
+        
+        if State.minimized then
+            -- Minimize to just title bar
+            GUI.Frame.Size = UDim2.new(0, 100, 0, 25)
+            GUI.MinimizeButton.Text = "+"
+            GUI.Content.Visible = false
+            
+            -- Center title text when minimized
+            GUI.TitleText.Position = UDim2.new(0.5, -25, 0, 0)
+            GUI.TitleText.TextXAlignment = Enum.TextXAlignment.Center
+        else
+            -- Restore to normal size
+            GUI.Frame.Size = UDim2.new(0, 180, 0, 200)
+            GUI.MinimizeButton.Text = "-"
+            GUI.Content.Visible = true
+            
+            -- Restore title text position
+            GUI.TitleText.Position = UDim2.new(0.2, 0, 0, 0)
+            GUI.TitleText.TextXAlignment = Enum.TextXAlignment.Left
+        end
+    end)
+
+    -- Close button
+    GUI.CloseButton.MouseButton1Click:Connect(function()
+        State.hookEnabled = false
+        GUI.MainFrame:Destroy()
+    end)
+end
+
+------ REMOTE EVENT HOOK ------
+local function InitializeRemoteHook()
+    local remoteEvent = ReplicatedStorage:WaitForChild("ProMgs"):WaitForChild("RemoteEvent")
+    local oldNamecall
+    
+    oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
+        if not State.hookEnabled then
+            return oldNamecall(self, ...)
+        end
+        
+        local args = {...}
+        local method = getnamecallmethod()
+
+        if self == remoteEvent and method == "FireServer" then
+            local eventType = args[1]
+            local eventID = args[2]
+            
+            if typeof(eventID) == "number" then
+                if eventType == "JumpResults" then
+                    State.jumpID = eventID
+                    warn("Jump ID captured:", eventID)
+                elseif eventType == "LandingResults" then
+                    State.landingID = eventID
+                    warn("Landing ID captured:", eventID)
+                elseif eventType == "ClaimRooftopWinsReward" then
+                    State.winID = eventID
+                    warn("Win ID captured:", eventID)
+                elseif eventType == "ClaimRooftopMagicToken" then
+                    State.magicTokenID = eventID
+                    warn("Magic Token ID captured:", eventID)
+                end
+                
+                UpdateStatus()
+            end
+        end
+
+        return oldNamecall(self, ...)
+    end)
+end
+
+------ INITIALIZATION ------
+-- Create GUI
+GUI = CreateGUI()
+
+-- Set up event handlers
+InitializeEventHandlers()
+InitializeRemoteHook()
+
+print("Auto Coin V3 - Minimalist Complete Version Loaded Successfully!")

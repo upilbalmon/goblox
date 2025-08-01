@@ -17,7 +17,7 @@ local RunService = game:GetService("RunService")
 local PAUSE_INTERVAL = 10 * 60  -- 10 minutes
 local PAUSE_DURATION = 30       -- 30 seconds
 local WIN_DELAY = 15            -- 10 seconds for Auto Win
-local TOKEN_DELAY = 15          -- 10 seconds for Auto Magic Token
+local TOKEN_DELAY = 5           -- 10 seconds for Auto Magic Token
 local DEFAULT_HEIGHT = 5000
 local DEFAULT_DELAY = 5
 
@@ -429,7 +429,7 @@ local function InitializeEventHandlers()
             State.autoWinEnabled = not State.autoWinEnabled
             if State.autoWinEnabled then
                 GUI.AutoWinToggle.Text = "WIN ON"
-                GUI.AutoWinToggle.BackgroundColor3 = Color3.fromRGB(200, 50, 0)
+                GUI.AutoWinToggle.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
                 State.lastWinTime = os.time()
             else
                 GUI.AutoWinToggle.Text = "WIN OFF"
@@ -444,7 +444,7 @@ local function InitializeEventHandlers()
             State.autoTokenEnabled = not State.autoTokenEnabled
             if State.autoTokenEnabled then
                 GUI.AutoTokenToggle.Text = "MAGIC ON"
-                GUI.AutoTokenToggle.BackgroundColor3 = Color3.fromRGB(200, 50, 0)
+                GUI.AutoTokenToggle.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
                 State.lastTokenTime = os.time()
             else
                 GUI.AutoTokenToggle.Text = "MAGIC OFF"

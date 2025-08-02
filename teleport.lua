@@ -315,5 +315,3 @@ player.CharacterRemoving:Connect(function()
         toggleFly() -- Turn off fly when character is removed
     end
 end)
-
-

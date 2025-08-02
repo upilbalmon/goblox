@@ -13,8 +13,6 @@ local remoteEvent = ReplicatedStorage:WaitForChild("Msg"):WaitForChild("RemoteEv
 local BUTTON_WIDTH = 80
 local BUTTON_HEIGHT = 25
 local BUTTON_SPACING = 10
-local BASE_POSITION = CFrame.new(-16.66, 3.39, -4953.99)
-local HIDE_POSITION = CFrame.new(-49.47, 14329.43, -5780.3)
 local FLY_SPEED = 50
 
 -- State variables
@@ -315,3 +313,4 @@ player.CharacterRemoving:Connect(function()
         toggleFly() -- Turn off fly when character is removed
     end
 end)
+

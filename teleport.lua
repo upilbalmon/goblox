@@ -2,18 +2,35 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
 
--- Player Setup
+-- Cache frequently used variables
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
+local remoteEvent = ReplicatedStorage:WaitForChild("Msg"):WaitForChild("RemoteEvent")
 
--- Main GUI
+-- Constants
+local BUTTON_WIDTH = 80
+local BUTTON_HEIGHT = 25
+local BUTTON_SPACING = 10
+local BASE_POSITION = CFrame.new(-16.66, 3.39, -4953.99)
+local HIDE_POSITION = CFrame.new(-49.47, 14329.43, -5780.3)
+local FLY_SPEED = 50
+
+-- State variables
+local isHidden = false
+local originalPosition = nil
+local flyEnabled = false
+local bodyVelocity = nil
+local flyConnection = nil
+
+-- Create GUI
 local TeleportGUI = Instance.new("ScreenGui")
 TeleportGUI.Name = "SimpleTeleportGUI"
 TeleportGUI.Parent = playerGui
 TeleportGUI.ResetOnSpawn = false
 
--- Main Frame (Compact size)
+-- Main Frame
 local MainFrame = Instance.new("Frame")
 MainFrame.Size = UDim2.new(0, 250, 0, 200)
 MainFrame.Position = UDim2.new(0.5, -125, 0.5, -100)
@@ -27,7 +44,6 @@ MainFrame.Active = true
 -- Title Bar
 local TitleBar = Instance.new("Frame")
 TitleBar.Size = UDim2.new(1, 0, 0, 25)
-TitleBar.Position = UDim2.new(0, 0, 0, 0)
 TitleBar.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
 TitleBar.Parent = MainFrame
 
@@ -57,7 +73,7 @@ CloseButton.Parent = TitleBar
 local CoordInput = Instance.new("TextBox")
 CoordInput.Size = UDim2.new(0, 180, 0, 25)
 CoordInput.Position = UDim2.new(0.5, -90, 0, 35)
-CoordInput.Text = "-16.66, 3.39, -4953.99"
+CoordInput.Text = tostring(BASE_POSITION.Position)
 CoordInput.PlaceholderText = "X, Y, Z"
 CoordInput.TextColor3 = Color3.new(1, 1, 1)
 CoordInput.BackgroundColor3 = Color3.fromRGB(50, 50, 70)
@@ -67,73 +83,38 @@ CoordInput.TextSize = 12
 CoordInput.TextXAlignment = Enum.TextXAlignment.Center
 CoordInput.Parent = MainFrame
 
--- Action Buttons (arranged in a grid)
-local buttonY = 70
-local buttonWidth = 80
-local buttonHeight = 25
-local buttonSpacing = 10
+-- Action Buttons
+local function createButton(name, positionX, positionY, color, text)
+    local button = Instance.new("TextButton")
+    button.Size = UDim2.new(0, BUTTON_WIDTH, 0, BUTTON_HEIGHT)
+    button.Position = UDim2.new(positionX, positionY, 0, 0)
+    button.Text = text or name
+    button.Name = name
+    button.TextColor3 = Color3.new(1, 1, 1)
+    button.BackgroundColor3 = color
+    button.BorderSizePixel = 0
+    button.Font = Enum.Font.GothamBold
+    button.TextSize = 12
+    button.Parent = MainFrame
+    return button
+end
 
--- Row 1
-local TeleportButton = Instance.new("TextButton")
-TeleportButton.Size = UDim2.new(0, buttonWidth, 0, buttonHeight)
-TeleportButton.Position = UDim2.new(0.5, -buttonWidth-buttonSpacing/2, 0, buttonY)
-TeleportButton.Text = "GO"
-TeleportButton.TextColor3 = Color3.new(1, 1, 1)
-TeleportButton.BackgroundColor3 = Color3.fromRGB(30, 80, 30)
-TeleportButton.BorderSizePixel = 0
-TeleportButton.Font = Enum.Font.GothamBold
-TeleportButton.TextSize = 12
-TeleportButton.Parent = MainFrame
+-- Create buttons in a grid
+local TeleportButton = createButton("TeleportButton", 0.5, -BUTTON_WIDTH-BUTTON_SPACING/2, Color3.fromRGB(30, 80, 30), "GO")
+TeleportButton.Position = UDim2.new(0.5, -BUTTON_WIDTH-BUTTON_SPACING/2, 0, 70)
 
-local BaseButton = Instance.new("TextButton")
-BaseButton.Size = UDim2.new(0, buttonWidth, 0, buttonHeight)
-BaseButton.Position = UDim2.new(0.5, buttonSpacing/2, 0, buttonY)
-BaseButton.Text = "BASE"
-BaseButton.TextColor3 = Color3.new(1, 1, 1)
-BaseButton.BackgroundColor3 = Color3.fromRGB(80, 80, 30)
-BaseButton.BorderSizePixel = 0
-BaseButton.Font = Enum.Font.GothamBold
-BaseButton.TextSize = 12
-BaseButton.Parent = MainFrame
+local BaseButton = createButton("BaseButton", 0.5, BUTTON_SPACING/2, Color3.fromRGB(80, 80, 30), "BASE")
+BaseButton.Position = UDim2.new(0.5, BUTTON_SPACING/2, 0, 70)
 
--- Row 2
-buttonY = buttonY + buttonHeight + buttonSpacing
+local HideButton = createButton("HideButton", 0.5, -BUTTON_WIDTH-BUTTON_SPACING/2, Color3.fromRGB(100, 60, 60), "HIDE")
+HideButton.Position = UDim2.new(0.5, -BUTTON_WIDTH-BUTTON_SPACING/2, 0, 105)
 
-local HideButton = Instance.new("TextButton")
-HideButton.Size = UDim2.new(0, buttonWidth, 0, buttonHeight)
-HideButton.Position = UDim2.new(0.5, -buttonWidth-buttonSpacing/2, 0, buttonY)
-HideButton.Text = "HIDE"
-HideButton.TextColor3 = Color3.new(1, 1, 1)
-HideButton.BackgroundColor3 = Color3.fromRGB(100, 60, 60)
-HideButton.BorderSizePixel = 0
-HideButton.Font = Enum.Font.GothamBold
-HideButton.TextSize = 12
-HideButton.Parent = MainFrame
+local FlyButton = createButton("FlyButton", 0.5, BUTTON_SPACING/2, Color3.fromRGB(80, 30, 30), "FLY: OFF")
+FlyButton.Position = UDim2.new(0.5, BUTTON_SPACING/2, 0, 105)
 
-local FlyButton = Instance.new("TextButton")
-FlyButton.Size = UDim2.new(0, buttonWidth, 0, buttonHeight)
-FlyButton.Position = UDim2.new(0.5, buttonSpacing/2, 0, buttonY)
-FlyButton.Text = "FLY: OFF"
-FlyButton.TextColor3 = Color3.new(1, 1, 1)
-FlyButton.BackgroundColor3 = Color3.fromRGB(80, 30, 30)
-FlyButton.BorderSizePixel = 0
-FlyButton.Font = Enum.Font.GothamBold
-FlyButton.TextSize = 12
-FlyButton.Parent = MainFrame
-
--- Row 3
-buttonY = buttonY + buttonHeight + buttonSpacing
-
-local CopyButton = Instance.new("TextButton")
-CopyButton.Size = UDim2.new(0, 180, 0, buttonHeight)
-CopyButton.Position = UDim2.new(0.5, -90, 0, buttonY)
-CopyButton.Text = "COPY POSITION"
-CopyButton.TextColor3 = Color3.new(1, 1, 1)
-CopyButton.BackgroundColor3 = Color3.fromRGB(50, 50, 90)
-CopyButton.BorderSizePixel = 0
-CopyButton.Font = Enum.Font.GothamBold
-CopyButton.TextSize = 12
-CopyButton.Parent = MainFrame
+local CopyButton = createButton("CopyButton", 0.5, -90, Color3.fromRGB(50, 50, 90), "COPY POSITION")
+CopyButton.Size = UDim2.new(0, 180, 0, BUTTON_HEIGHT)
+CopyButton.Position = UDim2.new(0.5, -90, 0, 140)
 
 -- Status Label
 local StatusLabel = Instance.new("TextLabel")
@@ -147,7 +128,7 @@ StatusLabel.TextSize = 12
 StatusLabel.TextXAlignment = Enum.TextXAlignment.Center
 StatusLabel.Parent = MainFrame
 
--- Core Functions
+-- Helper functions
 local function parseCoordinates(text)
     local coords = {}
     for num in text:gmatch("[-]?%d+[.]?%d*") do
@@ -156,57 +137,96 @@ local function parseCoordinates(text)
     return coords[1] or 0, coords[2] or 0, coords[3] or 0
 end
 
-local function teleportToCoords()
-    local text = CoordInput.Text
-    local x, y, z = parseCoordinates(text)
-    
-    local args = {
-        "TeleportMe",
-        CFrame.new(x, y, z)
-    }
-    
+local function updateStatus(message, duration)
+    StatusLabel.Text = message
+    if duration then
+        delay(duration, function()
+            if StatusLabel.Text == message then
+                StatusLabel.Text = "Ready"
+            end
+        end)
+    end
+end
+
+local function safeTeleport(cframe)
     local success, err = pcall(function()
-        ReplicatedStorage:WaitForChild("Msg"):WaitForChild("RemoteEvent"):FireServer(unpack(args))
+        remoteEvent:FireServer("TeleportMe", cframe)
     end)
-    
-    StatusLabel.Text = success and "Teleported!" or "Error: "..tostring(err)
+    updateStatus(success and "Teleported!" or "Error: "..tostring(err))
+    return success
+end
+
+-- Teleport functions
+local function teleportToCoords()
+    local x, y, z = parseCoordinates(CoordInput.Text)
+    safeTeleport(CFrame.new(x, y, z))
 end
 
 local function teleportToBase()
-    CoordInput.Text = "-16.66, 3.39, -4953.99"
-    teleportToCoords()
+    CoordInput.Text = tostring(BASE_POSITION.Position)
+    safeTeleport(BASE_POSITION)
 end
 
--- Hide System
-local isHidden = false
-local originalPosition = nil
-local hidePosition = CFrame.new(-49.47, 14329.43, -5780.3)
-
+-- Hide system
 local function toggleHide()
     local character = player.Character
-    if not character or not character:FindFirstChild("HumanoidRootPart") then return end
+    if not character or not character:FindFirstChild("HumanoidRootPart") then 
+        updateStatus("No character found!")
+        return
+    end
     
     if not isHidden then
         originalPosition = character.HumanoidRootPart.CFrame
-        ReplicatedStorage:WaitForChild("Msg"):WaitForChild("RemoteEvent"):FireServer("TeleportMe", hidePosition)
-        HideButton.Text = "RETURN"
-        HideButton.BackgroundColor3 = Color3.fromRGB(60, 100, 60)
-        StatusLabel.Text = "Hidden!"
+        if safeTeleport(HIDE_POSITION) then
+            HideButton.Text = "RETURN"
+            HideButton.BackgroundColor3 = Color3.fromRGB(60, 100, 60)
+            isHidden = true
+        end
     else
         if originalPosition then
-            ReplicatedStorage:WaitForChild("Msg"):WaitForChild("RemoteEvent"):FireServer("TeleportMe", originalPosition)
+            if safeTeleport(originalPosition) then
+                HideButton.Text = "HIDE"
+                HideButton.BackgroundColor3 = Color3.fromRGB(100, 60, 60)
+                isHidden = false
+            end
+        else
+            updateStatus("No original position saved!")
         end
-        HideButton.Text = "HIDE"
-        HideButton.BackgroundColor3 = Color3.fromRGB(100, 60, 60)
-        StatusLabel.Text = "Returned!"
     end
-    isHidden = not isHidden
 end
 
--- Fly System
-local flyEnabled = false
-local flySpeed = 50
-local bodyVelocity
+-- Fly system
+local function updateFlyVelocity(character)
+    if not character or not character:FindFirstChild("HumanoidRootPart") then return end
+    
+    local direction = Vector3.new(0, 0, 0)
+    local rootPart = character.HumanoidRootPart
+    
+    if UserInputService:IsKeyDown(Enum.KeyCode.W) then
+        direction = direction + rootPart.CFrame.LookVector
+    end
+    if UserInputService:IsKeyDown(Enum.KeyCode.S) then
+        direction = direction - rootPart.CFrame.LookVector
+    end
+    if UserInputService:IsKeyDown(Enum.KeyCode.A) then
+        direction = direction - rootPart.CFrame.RightVector
+    end
+    if UserInputService:IsKeyDown(Enum.KeyCode.D) then
+        direction = direction + rootPart.CFrame.RightVector
+    end
+    if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
+        direction = direction + Vector3.new(0, 1, 0)
+    end
+    if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
+        direction = direction + Vector3.new(0, -1, 0)
+    end
+    
+    if direction.Magnitude > 0 then
+        bodyVelocity.Velocity = direction.Unit * FLY_SPEED
+    else
+        bodyVelocity.Velocity = Vector3.new(0, 0, 0)
+    end
+end
 
 local function toggleFly()
     flyEnabled = not flyEnabled
@@ -216,7 +236,7 @@ local function toggleFly()
     if flyEnabled then
         FlyButton.Text = "FLY: ON"
         FlyButton.BackgroundColor3 = Color3.fromRGB(30, 80, 30)
-        StatusLabel.Text = "Fly enabled - WASD+Space"
+        updateStatus("Fly enabled - WASD+Space")
         
         if character and humanoid then
             humanoid.PlatformStand = true
@@ -225,38 +245,22 @@ local function toggleFly()
             bodyVelocity.MaxForce = Vector3.new(10000, 10000, 10000)
             bodyVelocity.Parent = character.HumanoidRootPart
             
-            local flyConnection
-            flyConnection = UserInputService.InputBegan:Connect(function(input)
-                local direction = Vector3.new(0, 0, 0)
-                if input.KeyCode == Enum.KeyCode.W then
-                    direction = direction + character.HumanoidRootPart.CFrame.LookVector
-                elseif input.KeyCode == Enum.KeyCode.S then
-                    direction = direction - character.HumanoidRootPart.CFrame.LookVector
-                elseif input.KeyCode == Enum.KeyCode.A then
-                    direction = direction - character.HumanoidRootPart.CFrame.RightVector
-                elseif input.KeyCode == Enum.KeyCode.D then
-                    direction = direction + character.HumanoidRootPart.CFrame.RightVector
-                elseif input.KeyCode == Enum.KeyCode.Space then
-                    direction = direction + Vector3.new(0, 1, 0)
-                elseif input.KeyCode == Enum.KeyCode.LeftControl then
-                    direction = direction + Vector3.new(0, -1, 0)
-                end
-                
-                if direction.Magnitude > 0 then
-                    bodyVelocity.Velocity = direction.Unit * flySpeed
-                end
-            end)
-            
-            FlyButton:GetPropertyChangedSignal("Text"):Connect(function()
-                if FlyButton.Text == "FLY: OFF" then
-                    flyConnection:Disconnect()
+            -- More efficient fly control using RunService
+            flyConnection = RunService.Heartbeat:Connect(function()
+                if flyEnabled and character and character:FindFirstChild("HumanoidRootPart") then
+                    updateFlyVelocity(character)
                 end
             end)
         end
     else
         FlyButton.Text = "FLY: OFF"
         FlyButton.BackgroundColor3 = Color3.fromRGB(80, 30, 30)
-        StatusLabel.Text = "Fly disabled"
+        updateStatus("Fly disabled")
+        
+        if flyConnection then
+            flyConnection:Disconnect()
+            flyConnection = nil
+        end
         
         if character and humanoid then
             humanoid.PlatformStand = false
@@ -268,7 +272,7 @@ local function toggleFly()
     end
 end
 
--- Copy Position
+-- Copy position
 local function copyCurrentPosition()
     local character = player.Character
     if character and character:FindFirstChild("HumanoidRootPart") then
@@ -276,21 +280,25 @@ local function copyCurrentPosition()
         local coordText = string.format("%.2f, %.2f, %.2f", pos.X, pos.Y, pos.Z)
         CoordInput.Text = coordText
         
-        pcall(function()
+        local success = pcall(function()
             local clipBoard = setclipboard or toclipboard or set_clipboard or (Clipboard and Clipboard.set)
             if clipBoard then
                 clipBoard(coordText)
-                StatusLabel.Text = "Copied to clipboard!"
+                updateStatus("Copied to clipboard!", 2)
             else
-                StatusLabel.Text = "Position copied!"
+                updateStatus("Position copied!", 2)
             end
         end)
+        
+        if not success then
+            updateStatus("Position copied!", 2)
+        end
     else
-        StatusLabel.Text = "No character!"
+        updateStatus("No character found!")
     end
 end
 
--- Connect Buttons
+-- Connect buttons
 CloseButton.MouseButton1Click:Connect(function() TeleportGUI:Destroy() end)
 TeleportButton.MouseButton1Click:Connect(teleportToCoords)
 BaseButton.MouseButton1Click:Connect(teleportToBase)
@@ -299,4 +307,11 @@ FlyButton.MouseButton1Click:Connect(toggleFly)
 CopyButton.MouseButton1Click:Connect(copyCurrentPosition)
 
 -- Initial teleport
-ReplicatedStorage:WaitForChild("Msg"):WaitForChild("RemoteEvent"):FireServer("TeleportMe", CFrame.new(-16.66, 3.39, -4953.99))
+safeTeleport(BASE_POSITION)
+
+-- Cleanup on player leaving
+player.CharacterRemoving:Connect(function()
+    if flyEnabled then
+        toggleFly() -- Turn off fly when character is removed
+    end
+end)

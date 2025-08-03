@@ -24,18 +24,20 @@ frame.BackgroundTransparency = 0.4
 frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 frame.BorderSizePixel = 0
 frame.AnchorPoint = Vector2.new(0.5, 0.5)
-frame.ZIndex = 10
+frame.ZIndex = 20
+frame.Active = true
+frame.Selectable = false
 
 local uiCorner = Instance.new("UICorner", frame)
 uiCorner.CornerRadius = UDim.new(0, 8)
 
--- Title Bar (for drag + buttons)
+-- Title Bar
 local titleBar = Instance.new("Frame", frame)
 titleBar.Size = UDim2.new(1, 0, 0, 24)
 titleBar.BackgroundTransparency = 0.2
 titleBar.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 titleBar.BorderSizePixel = 0
-titleBar.ZIndex = 11
+titleBar.ZIndex = 21
 
 local titleCorner = Instance.new("UICorner", titleBar)
 titleCorner.CornerRadius = UDim.new(0, 6)
@@ -49,7 +51,7 @@ closeBtn.BackgroundTransparency = 1
 closeBtn.TextColor3 = Color3.fromRGB(255, 80, 80)
 closeBtn.Font = Enum.Font.GothamBold
 closeBtn.TextSize = 16
-closeBtn.ZIndex = 12
+closeBtn.ZIndex = 22
 
 -- Minimize Button
 local minimizeBtn = Instance.new("TextButton", titleBar)
@@ -60,7 +62,7 @@ minimizeBtn.BackgroundTransparency = 1
 minimizeBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
 minimizeBtn.Font = Enum.Font.GothamBold
 minimizeBtn.TextSize = 16
-minimizeBtn.ZIndex = 12
+minimizeBtn.ZIndex = 22
 
 -- Fly Button
 local flyButton = Instance.new("TextButton", frame)
@@ -72,7 +74,7 @@ flyButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 flyButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 flyButton.Font = Enum.Font.Gotham
 flyButton.TextSize = 16
-flyButton.ZIndex = 10
+flyButton.ZIndex = 20
 
 local flyCorner = Instance.new("UICorner", flyButton)
 flyCorner.CornerRadius = UDim.new(0, 6)
@@ -87,7 +89,7 @@ teleportButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 teleportButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 teleportButton.Font = Enum.Font.Gotham
 teleportButton.TextSize = 16
-teleportButton.ZIndex = 10
+teleportButton.ZIndex = 20
 
 local teleportCorner = Instance.new("UICorner", teleportButton)
 teleportCorner.CornerRadius = UDim.new(0, 6)
@@ -161,30 +163,33 @@ minimizeBtn.MouseButton1Click:Connect(function()
     frame.Size = minimized and UDim2.new(0, 220, 0, 30) or UDim2.new(0, 220, 0, 140)
 end)
 
--- Dragging
-local dragging, dragInput, dragStart, startPos
+-- Draggable Frame
+local dragging = false
+local dragStart, startPos
 
-titleBar.InputBegan:Connect(function(input)
+frame.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then
         dragging = true
         dragStart = input.Position
         startPos = frame.Position
+
         input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then dragging = false end
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
         end)
     end
 end)
 
-titleBar.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement then
-        dragInput = input
-    end
-end)
-
 UserInputService.InputChanged:Connect(function(input)
-    if input == dragInput and dragging then
+    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
         local delta = input.Position - dragStart
-        frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        frame.Position = UDim2.new(
+            startPos.X.Scale,
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale,
+            startPos.Y.Offset + delta.Y
+        )
     end
 end)
 

@@ -13,7 +13,7 @@ local remoteEvent = ReplicatedStorage:WaitForChild("Msg"):WaitForChild("RemoteEv
 
 -- Create GUI with AlwaysOnTop
 local TeleportGUI = Instance.new("ScreenGui")
-TeleportGUI.Name = "EnhancedTeleportGUI"
+TeleportGUI.Name = "FinalTeleportGUI"
 TeleportGUI.Parent = playerGui
 TeleportGUI.ResetOnSpawn = false
 TeleportGUI.DisplayOrder = 999  -- Ensures it's always on top
@@ -105,8 +105,12 @@ for _, button in ipairs({CloseButton, MinimizeButton, HideButton, FlyButton}) do
     corner.Parent = button
 end
 
--- Dragging Functionality (Fixed)
-local dragStartPos, dragStartInputPos, isDragging
+-- =============================================
+-- FINAL FIXED DRAGGING IMPLEMENTATION
+-- =============================================
+local dragStartPos
+local dragStartInputPos
+local dragActive = false
 
 local function updateDrag(input)
     local delta = input.Position - dragStartInputPos
@@ -118,23 +122,27 @@ end
 
 TitleBar.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        isDragging = true
+        dragActive = true
         dragStartPos = MainFrame.Position
         dragStartInputPos = input.Position
         
-        input.Changed:Connect(function()
+        -- Capture mouse movement until release
+        local connection
+        connection = input.Changed:Connect(function()
             if input.UserInputState == Enum.UserInputState.End then
-                isDragging = false
+                dragActive = false
+                connection:Disconnect()
             end
         end)
     end
 end)
 
 UserInputService.InputChanged:Connect(function(input)
-    if isDragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+    if dragActive and input.UserInputType == Enum.UserInputType.MouseMovement then
         updateDrag(input)
     end
 end)
+-- =============================================
 
 -- Fly System
 local flyEnabled = false

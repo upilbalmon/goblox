@@ -2,6 +2,7 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
 
 -- Player Setup
 local player = Players.LocalPlayer
@@ -10,26 +11,28 @@ local playerGui = player:WaitForChild("PlayerGui")
 -- Remote Event
 local remoteEvent = ReplicatedStorage:WaitForChild("Msg"):WaitForChild("RemoteEvent")
 
--- Create GUI
+-- Create GUI with AlwaysOnTop
 local TeleportGUI = Instance.new("ScreenGui")
 TeleportGUI.Name = "EnhancedTeleportGUI"
 TeleportGUI.Parent = playerGui
 TeleportGUI.ResetOnSpawn = false
+TeleportGUI.DisplayOrder = 999  -- Ensures it's always on top
+TeleportGUI.IgnoreGuiInset = true
 
--- Main Frame (Transparent with rounded corners)
+-- Main Frame
 local MainFrame = Instance.new("Frame")
-MainFrame.Size = UDim2.new(0, 180, 0, 120)  -- Slightly taller for title bar
+MainFrame.Size = UDim2.new(0, 180, 0, 120)
 MainFrame.Position = UDim2.new(0, 20, 0.5, -60)
 MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
 MainFrame.BackgroundTransparency = 0.5
 MainFrame.Parent = TeleportGUI
 
--- Add rounded corners
+-- Rounded Corners
 local UICorner = Instance.new("UICorner")
 UICorner.CornerRadius = UDim.new(0, 12)
 UICorner.Parent = MainFrame
 
--- Title Bar (for dragging and buttons)
+-- Title Bar (for dragging)
 local TitleBar = Instance.new("Frame")
 TitleBar.Size = UDim2.new(1, 0, 0, 25)
 TitleBar.Position = UDim2.new(0, 0, 0, 0)
@@ -37,7 +40,7 @@ TitleBar.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
 TitleBar.BackgroundTransparency = 0.7
 TitleBar.Parent = MainFrame
 
--- Title (Minimalist)
+-- Title
 local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(0, 100, 1, 0)
 Title.Position = UDim2.new(0, 5, 0, 0)
@@ -49,7 +52,7 @@ Title.TextSize = 12
 Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.Parent = TitleBar
 
--- Close Button
+-- Control Buttons
 local CloseButton = Instance.new("TextButton")
 CloseButton.Size = UDim2.new(0, 25, 0, 25)
 CloseButton.Position = UDim2.new(1, -25, 0, 0)
@@ -61,7 +64,6 @@ CloseButton.Font = Enum.Font.GothamBold
 CloseButton.TextSize = 18
 CloseButton.Parent = TitleBar
 
--- Minimize Button
 local MinimizeButton = Instance.new("TextButton")
 MinimizeButton.Size = UDim2.new(0, 25, 0, 25)
 MinimizeButton.Position = UDim2.new(1, -50, 0, 0)
@@ -73,16 +75,7 @@ MinimizeButton.Font = Enum.Font.GothamBold
 MinimizeButton.TextSize = 18
 MinimizeButton.Parent = TitleBar
 
--- Add rounded corners to title bar buttons
-local CloseButtonCorner = Instance.new("UICorner")
-CloseButtonCorner.CornerRadius = UDim.new(0, 6)
-CloseButtonCorner.Parent = CloseButton
-
-local MinimizeButtonCorner = Instance.new("UICorner")
-MinimizeButtonCorner.CornerRadius = UDim.new(0, 6)
-MinimizeButtonCorner.Parent = MinimizeButton
-
--- Hide Place Button
+-- Action Buttons
 local HideButton = Instance.new("TextButton")
 HideButton.Size = UDim2.new(0, 150, 0, 30)
 HideButton.Position = UDim2.new(0.5, -75, 0, 35)
@@ -94,7 +87,6 @@ HideButton.Font = Enum.Font.Gotham
 HideButton.TextSize = 12
 HideButton.Parent = MainFrame
 
--- Fly Button
 local FlyButton = Instance.new("TextButton")
 FlyButton.Size = UDim2.new(0, 150, 0, 30)
 FlyButton.Position = UDim2.new(0.5, -75, 0, 70)
@@ -106,75 +98,80 @@ FlyButton.Font = Enum.Font.Gotham
 FlyButton.TextSize = 12
 FlyButton.Parent = MainFrame
 
--- Add rounded corners to main buttons
-local HideButtonCorner = Instance.new("UICorner")
-HideButtonCorner.CornerRadius = UDim.new(0, 8)
-HideButtonCorner.Parent = HideButton
+-- Add rounded corners to all buttons
+for _, button in ipairs({CloseButton, MinimizeButton, HideButton, FlyButton}) do
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, button == CloseButton and 6 or 8)
+    corner.Parent = button
+end
 
-local FlyButtonCorner = Instance.new("UICorner")
-FlyButtonCorner.CornerRadius = UDim.new(0, 8)
-FlyButtonCorner.Parent = FlyButton
+-- Dragging Functionality (Fixed)
+local dragStartPos, dragStartInputPos, isDragging
 
--- Dragging Functionality
-local dragging
-local dragInput
-local dragStart
-local startPos
-
-local function updateInput(input)
-    local delta = input.Position - dragStart
-    MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+local function updateDrag(input)
+    local delta = input.Position - dragStartInputPos
+    MainFrame.Position = UDim2.new(
+        dragStartPos.X.Scale, dragStartPos.X.Offset + delta.X,
+        dragStartPos.Y.Scale, dragStartPos.Y.Offset + delta.Y
+    )
 end
 
 TitleBar.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        dragging = true
-        dragStart = input.Position
-        startPos = MainFrame.Position
+        isDragging = true
+        dragStartPos = MainFrame.Position
+        dragStartInputPos = input.Position
         
         input.Changed:Connect(function()
             if input.UserInputState == Enum.UserInputState.End then
-                dragging = false
+                isDragging = false
             end
         end)
     end
 end)
 
-TitleBar.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement then
-        dragInput = input
-    end
-end)
-
 UserInputService.InputChanged:Connect(function(input)
-    if input == dragInput and dragging then
-        updateInput(input)
+    if isDragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        updateDrag(input)
     end
 end)
 
--- Fly System Variables
+-- Fly System
 local flyEnabled = false
-local bodyVelocity = nil
-local flyConnection = nil
+local bodyVelocity, flyConnection
 
--- Hide Place Function
-local function teleportToHidePlace()
-    local character = player.Character
+local function updateFlyVelocity(character)
     if not character or not character:FindFirstChild("HumanoidRootPart") then return end
     
-    local currentPosition = character.HumanoidRootPart.Position
-    local hidePosition = Vector3.new(currentPosition.X, 16000, currentPosition.Z)
+    local direction = Vector3.new(0, 0, 0)
+    local rootPart = character.HumanoidRootPart
     
-    local success, err = pcall(function()
-        remoteEvent:FireServer("TeleportMe", CFrame.new(hidePosition))
-    end)
+    if UserInputService:IsKeyDown(Enum.KeyCode.W) then
+        direction = direction + rootPart.CFrame.LookVector
+    end
+    if UserInputService:IsKeyDown(Enum.KeyCode.S) then
+        direction = direction - rootPart.CFrame.LookVector
+    end
+    if UserInputService:IsKeyDown(Enum.KeyCode.A) then
+        direction = direction - rootPart.CFrame.RightVector
+    end
+    if UserInputService:IsKeyDown(Enum.KeyCode.D) then
+        direction = direction + rootPart.CFrame.RightVector
+    end
+    if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
+        direction = direction + Vector3.new(0, 1, 0)
+    end
+    if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
+        direction = direction + Vector3.new(0, -1, 0)
+    end
     
-    if not success then
-        warn("Teleport failed: "..tostring(err))
+    if direction.Magnitude > 0 then
+        bodyVelocity.Velocity = direction.Unit * 50
+    else
+        bodyVelocity.Velocity = Vector3.new(0, 0, 0)
     end
 end
 
--- Fly System
 local function toggleFly()
     flyEnabled = not flyEnabled
     local character = player.Character
@@ -191,28 +188,9 @@ local function toggleFly()
             bodyVelocity.MaxForce = Vector3.new(10000, 10000, 10000)
             bodyVelocity.Parent = character.HumanoidRootPart
             
-            flyConnection = UserInputService.InputBegan:Connect(function(input)
-                if not flyEnabled then return end
-                
-                local rootPart = character.HumanoidRootPart
-                local direction = Vector3.new(0, 0, 0)
-                
-                if input.KeyCode == Enum.KeyCode.W then
-                    direction = direction + rootPart.CFrame.LookVector
-                elseif input.KeyCode == Enum.KeyCode.S then
-                    direction = direction - rootPart.CFrame.LookVector
-                elseif input.KeyCode == Enum.KeyCode.A then
-                    direction = direction - rootPart.CFrame.RightVector
-                elseif input.KeyCode == Enum.KeyCode.D then
-                    direction = direction + rootPart.CFrame.RightVector
-                elseif input.KeyCode == Enum.KeyCode.Space then
-                    direction = direction + Vector3.new(0, 1, 0)
-                elseif input.KeyCode == Enum.KeyCode.LeftControl then
-                    direction = direction + Vector3.new(0, -1, 0)
-                end
-                
-                if direction.Magnitude > 0 then
-                    bodyVelocity.Velocity = direction.Unit * 50
+            flyConnection = RunService.Heartbeat:Connect(function()
+                if flyEnabled and character and character:FindFirstChild("HumanoidRootPart") then
+                    updateFlyVelocity(character)
                 end
             end)
         end
@@ -277,6 +255,21 @@ setupButtonHover(FlyButton,
 
 setupButtonHover(CloseButton, Color3.fromRGB(180, 80, 80), Color3.fromRGB(220, 100, 100))
 setupButtonHover(MinimizeButton, Color3.fromRGB(80, 80, 180), Color3.fromRGB(100, 100, 220))
+
+-- Core Functions
+local function teleportToHidePlace()
+    local character = player.Character
+    if not character or not character:FindFirstChild("HumanoidRootPart") then return end
+    
+    local currentPosition = character.HumanoidRootPart.Position
+    local success = pcall(function()
+        remoteEvent:FireServer("TeleportMe", CFrame.new(currentPosition.X, 16000, currentPosition.Z))
+    end)
+    
+    if not success then
+        warn("Teleport failed")
+    end
+end
 
 -- Connect Buttons
 HideButton.MouseButton1Click:Connect(teleportToHidePlace)

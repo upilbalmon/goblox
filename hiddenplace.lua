@@ -1,199 +1,265 @@
--- Services
 local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
-
 local player = Players.LocalPlayer
-local remoteEvent = ReplicatedStorage:WaitForChild("Msg"):WaitForChild("RemoteEvent")
+local playerGui = player:WaitForChild("PlayerGui")
 
--- Fly System Variables
-local flyEnabled = false
-local bodyVelocity
+-- Create main ScreenGui
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "ControlPanel"
+ScreenGui.Parent = playerGui
+ScreenGui.ResetOnSpawn = false
+ScreenGui.DisplayOrder = 10
 
--- GUI Setup
-local screenGui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
-screenGui.Name = "MinimalFlyTeleportGui"
-screenGui.ResetOnSpawn = false
-screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+-- Main Frame with rounded corners
+local MainFrame = Instance.new("Frame")
+MainFrame.Size = UDim2.new(0, 180, 0, 100)
+MainFrame.Position = UDim2.new(0.5, -90, 0.5, -50)
+MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+MainFrame.BackgroundTransparency = 0.3
+MainFrame.Parent = ScreenGui
+MainFrame.Draggable = true
+MainFrame.Active = true
 
-local frame = Instance.new("Frame", screenGui)
-frame.Size = UDim2.new(0, 220, 0, 140)
-frame.Position = UDim2.new(0.5, -110, 0.8, -70)
-frame.BackgroundTransparency = 0.4
-frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-frame.BorderSizePixel = 0
-frame.AnchorPoint = Vector2.new(0.5, 0.5)
-frame.ZIndex = 20
-frame.Active = true
-frame.Selectable = false
+-- Rounded corners
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(0, 4)
+UICorner.Parent = MainFrame
 
-local uiCorner = Instance.new("UICorner", frame)
-uiCorner.CornerRadius = UDim.new(0, 8)
+local UIStroke = Instance.new("UIStroke")
+UIStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+UIStroke.Color = Color3.fromRGB(80, 80, 90)
+UIStroke.Thickness = 1
+UIStroke.Parent = MainFrame
 
 -- Title Bar
-local titleBar = Instance.new("Frame", frame)
-titleBar.Size = UDim2.new(1, 0, 0, 24)
-titleBar.BackgroundTransparency = 0.2
-titleBar.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-titleBar.BorderSizePixel = 0
-titleBar.ZIndex = 21
+local TitleBar = Instance.new("Frame")
+TitleBar.Size = UDim2.new(1, 0, 0, 20)
+TitleBar.Position = UDim2.new(0, 0, 0, 0)
+TitleBar.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+TitleBar.BackgroundTransparency = 0.3
+TitleBar.Parent = MainFrame
 
-local titleCorner = Instance.new("UICorner", titleBar)
-titleCorner.CornerRadius = UDim.new(0, 6)
+-- Top-only rounded corners
+local TitleBarCorners = Instance.new("UICorner")
+TitleBarCorners.CornerRadius = UDim.new(0, 4)
+TitleBarCorners.Parent = TitleBar
 
--- Close Button
-local closeBtn = Instance.new("TextButton", titleBar)
-closeBtn.Size = UDim2.new(0, 24, 1, 0)
-closeBtn.Position = UDim2.new(1, -24, 0, 0)
-closeBtn.Text = "✕"
-closeBtn.BackgroundTransparency = 1
-closeBtn.TextColor3 = Color3.fromRGB(255, 80, 80)
-closeBtn.Font = Enum.Font.GothamBold
-closeBtn.TextSize = 16
-closeBtn.ZIndex = 22
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(0, 120, 1, 0)
+Title.Position = UDim2.new(0, 5, 0, 0)
+Title.Text = "CONTROL PANEL"
+Title.TextColor3 = Color3.new(1, 1, 1)
+Title.BackgroundTransparency = 1
+Title.Font = Enum.Font.GothamMedium
+Title.TextSize = 12
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = TitleBar
 
 -- Minimize Button
-local minimizeBtn = Instance.new("TextButton", titleBar)
-minimizeBtn.Size = UDim2.new(0, 24, 1, 0)
-minimizeBtn.Position = UDim2.new(1, -48, 0, 0)
-minimizeBtn.Text = "—"
-minimizeBtn.BackgroundTransparency = 1
-minimizeBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
-minimizeBtn.Font = Enum.Font.GothamBold
-minimizeBtn.TextSize = 16
-minimizeBtn.ZIndex = 22
+local MinimizeButton = Instance.new("TextButton")
+MinimizeButton.Size = UDim2.new(0, 20, 0, 20)
+MinimizeButton.Position = UDim2.new(1, -40, 0, 0)
+MinimizeButton.Text = "_"
+MinimizeButton.TextColor3 = Color3.new(1, 1, 1)
+MinimizeButton.BackgroundTransparency = 0.7
+MinimizeButton.Font = Enum.Font.GothamBold
+MinimizeButton.TextSize = 14
+MinimizeButton.Parent = TitleBar
 
--- Fly Button
-local flyButton = Instance.new("TextButton", frame)
-flyButton.Size = UDim2.new(1, -20, 0, 40)
-flyButton.Position = UDim2.new(0, 10, 0, 34)
-flyButton.Text = "Toggle Fly"
-flyButton.BackgroundTransparency = 0.3
-flyButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-flyButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-flyButton.Font = Enum.Font.Gotham
-flyButton.TextSize = 16
-flyButton.ZIndex = 20
+-- Close Button
+local CloseButton = Instance.new("TextButton")
+CloseButton.Size = UDim2.new(0, 20, 0, 20)
+CloseButton.Position = UDim2.new(1, -20, 0, 0)
+CloseButton.Text = "×"
+CloseButton.TextColor3 = Color3.new(1, 1, 1)
+CloseButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+CloseButton.BackgroundTransparency = 0.5
+CloseButton.Font = Enum.Font.GothamMedium
+CloseButton.TextSize = 16
+CloseButton.Parent = TitleBar
 
-local flyCorner = Instance.new("UICorner", flyButton)
-flyCorner.CornerRadius = UDim.new(0, 6)
+-- Content Frame
+local ContentFrame = Instance.new("Frame")
+ContentFrame.Size = UDim2.new(1, 0, 1, -20)
+ContentFrame.Position = UDim2.new(0, 0, 0, 20)
+ContentFrame.BackgroundTransparency = 1
+ContentFrame.Parent = MainFrame
 
--- Teleport Button
-local teleportButton = Instance.new("TextButton", frame)
-teleportButton.Size = UDim2.new(1, -20, 0, 40)
-teleportButton.Position = UDim2.new(0, 10, 0, 80)
-teleportButton.Text = "Teleport Hide"
-teleportButton.BackgroundTransparency = 0.3
-teleportButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-teleportButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-teleportButton.Font = Enum.Font.Gotham
-teleportButton.TextSize = 16
-teleportButton.ZIndex = 20
+-- Main Button
+local MainButton = Instance.new("TextButton")
+MainButton.Size = UDim2.new(0, 160, 0, 30)
+MainButton.Position = UDim2.new(0.5, -80, 0, 10)
+MainButton.Text = "HIDE"
+MainButton.TextColor3 = Color3.new(0, 0, 0)
+MainButton.BackgroundColor3 = Color3.fromRGB(150, 150, 150)
+MainButton.BackgroundTransparency = 0.2
+MainButton.Font = Enum.Font.GothamMedium
+MainButton.TextSize = 12
+MainButton.Parent = ContentFrame
 
-local teleportCorner = Instance.new("UICorner", teleportButton)
-teleportCorner.CornerRadius = UDim.new(0, 6)
+-- Button rounded corners
+local ButtonCorners = Instance.new("UICorner")
+ButtonCorners.CornerRadius = UDim.new(0, 4)
+ButtonCorners.Parent = MainButton
 
--- Fly Logic
-local function updateFlyVelocity()
-    if not flyEnabled or not player.Character then return end
-    local root = player.Character:FindFirstChild("HumanoidRootPart")
-    if not root then return end
+-- Coordinates Label
+local CoordLabel = Instance.new("TextLabel")
+CoordLabel.Size = UDim2.new(1, -10, 0, 16)
+CoordLabel.Position = UDim2.new(0, 5, 1, -20)
+CoordLabel.Text = "Pos: (0, 0, 0)"
+CoordLabel.TextColor3 = Color3.new(1, 1, 1)
+CoordLabel.BackgroundTransparency = 1
+CoordLabel.Font = Enum.Font.Gotham
+CoordLabel.TextSize = 10
+CoordLabel.TextXAlignment = Enum.TextXAlignment.Left
+CoordLabel.Parent = ContentFrame
 
-    local dir = Vector3.zero
-    if UserInputService:IsKeyDown(Enum.KeyCode.W) then dir += root.CFrame.LookVector end
-    if UserInputService:IsKeyDown(Enum.KeyCode.S) then dir -= root.CFrame.LookVector end
-    if UserInputService:IsKeyDown(Enum.KeyCode.A) then dir -= root.CFrame.RightVector end
-    if UserInputService:IsKeyDown(Enum.KeyCode.D) then dir += root.CFrame.RightVector end
-    if UserInputService:IsKeyDown(Enum.KeyCode.Space) then dir += Vector3.new(0, 1, 0) end
-    if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then dir += Vector3.new(0, -1, 0) end
+-- Variables
+local originalPosition = nil
+local bodyVelocity = nil
+local flyConnection = nil
+local isHidden = false
+local isMinimized = false
 
-    bodyVelocity.Velocity = dir.Magnitude > 0 and dir.Unit * 50 or Vector3.zero
-end
-
-local function toggleFly()
-    flyEnabled = not flyEnabled
-    local character = player.Character
-    if flyEnabled then
-        if character then
-            local humanoid = character:FindFirstChildOfClass("Humanoid")
-            if humanoid then
-                humanoid.PlatformStand = true
-                bodyVelocity = Instance.new("BodyVelocity")
-                bodyVelocity.Velocity = Vector3.zero
-                bodyVelocity.MaxForce = Vector3.new(10000, 10000, 10000)
-                bodyVelocity.Parent = character:WaitForChild("HumanoidRootPart")
-                RunService.Heartbeat:Connect(updateFlyVelocity)
-            end
-        end
-    else
-        if character then
-            local humanoid = character:FindFirstChildOfClass("Humanoid")
-            if humanoid then humanoid.PlatformStand = false end
-            if bodyVelocity then bodyVelocity:Destroy() bodyVelocity = nil end
-        end
-    end
-end
-
-local function teleportToHidePlace()
+-- Update coordinates label
+local function updateCoordinates()
     local character = player.Character
     if character and character:FindFirstChild("HumanoidRootPart") then
         local pos = character.HumanoidRootPart.Position
-        local success, err = pcall(function()
-            remoteEvent:FireServer("TeleportMe", CFrame.new(pos.X, 16000, pos.Z))
-        end)
-        if not success then warn("Teleport failed:", err) end
+        CoordLabel.Text = string.format("Pos: (%.1f, %.1f, %.1f)", pos.X, pos.Y, pos.Z)
+    else
+        CoordLabel.Text = "Pos: (No character)"
     end
 end
 
--- Button Events
-flyButton.MouseButton1Click:Connect(toggleFly)
-teleportButton.MouseButton1Click:Connect(teleportToHidePlace)
+-- Fly control functions
+local function enableFly(character)
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    humanoid.PlatformStand = true
+    
+    bodyVelocity = Instance.new("BodyVelocity")
+    bodyVelocity.Velocity = Vector3.new(0, 0, 0)
+    bodyVelocity.MaxForce = Vector3.new(10000, 10000, 10000)
+    bodyVelocity.Parent = character.HumanoidRootPart
+    
+    flyConnection = UserInputService.InputBegan:Connect(function(input)
+        local direction = Vector3.new(0, 0, 0)
+        if input.KeyCode == Enum.KeyCode.W then
+            direction = direction + character.HumanoidRootPart.CFrame.LookVector
+        elseif input.KeyCode == Enum.KeyCode.S then
+            direction = direction - character.HumanoidRootPart.CFrame.LookVector
+        elseif input.KeyCode == Enum.KeyCode.A then
+            direction = direction - character.HumanoidRootPart.CFrame.RightVector
+        elseif input.KeyCode == Enum.KeyCode.D then
+            direction = direction + character.HumanoidRootPart.CFrame.RightVector
+        elseif input.KeyCode == Enum.KeyCode.Space then
+            direction = direction + Vector3.new(0, 1, 0)
+        elseif input.KeyCode == Enum.KeyCode.LeftControl then
+            direction = direction + Vector3.new(0, -1, 0)
+        end
+        
+        if direction.Magnitude > 0 then
+            bodyVelocity.Velocity = direction.Unit * 50
+        end
+    end)
+end
 
--- Close & Minimize
-closeBtn.MouseButton1Click:Connect(function()
-    screenGui:Destroy()
-end)
+local function disableFly(character)
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    humanoid.PlatformStand = false
+    
+    if bodyVelocity then
+        bodyVelocity:Destroy()
+        bodyVelocity = nil
+    end
+    
+    if flyConnection then
+        flyConnection:Disconnect()
+        flyConnection = nil
+    end
+end
 
-local minimized = false
-minimizeBtn.MouseButton1Click:Connect(function()
-    minimized = not minimized
-    flyButton.Visible = not minimized
-    teleportButton.Visible = not minimized
-    frame.Size = minimized and UDim2.new(0, 220, 0, 30) or UDim2.new(0, 220, 0, 140)
-end)
+-- Minimize functionality
+local function toggleMinimize()
+    if isMinimized then
+        -- Restore window
+        MainFrame.Size = UDim2.new(0, 180, 0, 100)
+        MainFrame.Position = UDim2.new(0.5, -90, 0.5, -50)
+        ContentFrame.Visible = true
+        MinimizeButton.Text = "_"
+        isMinimized = false
+    else
+        -- Minimize window
+        MainFrame.Size = UDim2.new(0, 180, 0, 20)
+        MainFrame.Position = UDim2.new(0.5, -90, 1, -25)
+        ContentFrame.Visible = false
+        MinimizeButton.Text = "+"
+        isMinimized = true
+    end
+end
 
--- Draggable Frame
-local dragging = false
-local dragStart, startPos
-
-frame.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        dragging = true
-        dragStart = input.Position
-        startPos = frame.Position
-
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then
-                dragging = false
+-- Main button functionality
+MainButton.MouseButton1Click:Connect(function()
+    local character = player.Character
+    if character and character:FindFirstChild("HumanoidRootPart") then
+        local rootPart = character.HumanoidRootPart
+        
+        if not isHidden then
+            -- Save original position and teleport to hidden place
+            originalPosition = rootPart.CFrame
+            local hiddenPosition = CFrame.new(
+                rootPart.Position.X,
+                16000,
+                rootPart.Position.Z
+            )
+            rootPart.CFrame = hiddenPosition
+            
+            -- Enable fly
+            enableFly(character)
+            
+            -- Update button appearance
+            MainButton.Text = "RETURN"
+            MainButton.TextColor3 = Color3.new(1, 1, 1)
+            MainButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+            isHidden = true
+        else
+            -- Return to original position
+            if originalPosition then
+                rootPart.CFrame = originalPosition
             end
-        end)
+            
+            -- Disable fly
+            disableFly(character)
+            
+            -- Update button appearance
+            MainButton.Text = "HIDE"
+            MainButton.TextColor3 = Color3.new(0, 0, 0)
+            MainButton.BackgroundColor3 = Color3.fromRGB(150, 150, 150)
+            isHidden = false
+        end
     end
 end)
 
-UserInputService.InputChanged:Connect(function(input)
-    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-        local delta = input.Position - dragStart
-        frame.Position = UDim2.new(
-            startPos.X.Scale,
-            startPos.X.Offset + delta.X,
-            startPos.Y.Scale,
-            startPos.Y.Offset + delta.Y
-        )
+-- Minimize button functionality
+MinimizeButton.MouseButton1Click:Connect(toggleMinimize)
+
+-- Close button functionality
+CloseButton.MouseButton1Click:Connect(function()
+    -- Clean up fly system if active
+    if isHidden then
+        local character = player.Character
+        if character then
+            disableFly(character)
+        end
     end
+    
+    -- Destroy GUI
+    ScreenGui:Destroy()
 end)
 
--- Cleanup
-player.CharacterRemoving:Connect(function()
-    if flyEnabled then toggleFly() end
-end)
+-- Update coordinates continuously
+RunService.Heartbeat:Connect(updateCoordinates)
+
+-- Initial update
+updateCoordinates()

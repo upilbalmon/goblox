@@ -36,6 +36,8 @@ ScreenGui.Name = "AutoFarmGUI"
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ScreenGui.DisplayOrder = 999
 
+ScreenGui.Parent = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
+
 -- Main Frame
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"

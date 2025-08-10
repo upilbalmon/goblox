@@ -16,10 +16,10 @@ local RunService = game:GetService("RunService")
 ------ CONSTANTS ------
 local PAUSE_INTERVAL = 60 * 60  -- 10 minutes
 local PAUSE_DURATION = 30       -- 30 seconds
-local WIN_DELAY = 15            -- 10 seconds for Auto Win
+local WIN_DELAY = 18            -- 10 seconds for Auto Win
 local TOKEN_DELAY = 20          -- 10 seconds for Auto Magic Token
-local DEFAULT_HEIGHT = 5000
-local DEFAULT_DELAY = 5
+local DEFAULT_HEIGHT = 6000
+local DEFAULT_DELAY = 6
 
 ------ STATE MANAGEMENT ------
 local State = {

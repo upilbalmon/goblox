@@ -13,11 +13,12 @@ local BookmarkList = Instance.new("Frame")
 local Layout = Instance.new("UIListLayout")
 local isMinimized = false
 local originalPosition = nil
+local originalSize = nil
 local bookmarks = {}
 
 -- Styling Transparan
 local function styleElement(el)
-    el.BackgroundTransparency = 0.7
+    el.BackgroundTransparency = 0.5
     el.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
     el.TextColor3 = Color3.fromRGB(255, 255, 255)
     el.BorderSizePixel = 0
@@ -105,11 +106,29 @@ styleElement(MinimizeButton)
 
 MinimizeButton.MouseButton1Click:Connect(function()
     isMinimized = not isMinimized
-    for _, child in pairs(Frame:GetChildren()) do
-        if child:IsA("TextBox") or child:IsA("TextButton") or child:IsA("Frame") then
-            if child ~= MinimizeButton and child ~= CloseButton then
-                child.Visible = not isMinimized
+    if isMinimized then
+        if not originalPosition then
+            originalPosition = Frame.Position
+            originalSize = Frame.Size
+        end
+        -- Sembunyikan semua anak Frame kecuali tombol Close dan Minimize
+        for _, child in pairs(Frame:GetChildren()) do
+            if (child:IsA("TextBox") or child:IsA("TextButton") or child:IsA("Frame")) and child ~= MinimizeButton and child ~= CloseButton then
+                child.Visible = false
             end
+        end
+        -- Perkecil Frame jadi tinggi 30, lebar tetap
+        Frame.Size = UDim2.new(Frame.Size.X.Scale, Frame.Size.X.Offset, 0, 30)
+    else
+        -- Tampilkan kembali semua anak Frame kecuali tombol Close dan Minimize
+        for _, child in pairs(Frame:GetChildren()) do
+            if (child:IsA("TextBox") or child:IsA("TextButton") or child:IsA("Frame")) and child ~= MinimizeButton and child ~= CloseButton then
+                child.Visible = true
+            end
+        end
+        -- Kembalikan ukuran Frame ke ukuran asli
+        if originalSize then
+            Frame.Size = originalSize
         end
     end
 end)

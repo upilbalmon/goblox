@@ -1,10 +1,10 @@
 --[[
-    AUTO COIN V3 - Compact Fixed Version
+    AUTO COIN V3 - Enhanced Version
     Features:
-    1. Fixed GUI visibility issues
-    2. More compact 200x200 layout
-    3. Proper initial black start button
-    4. Preserved all original functionality
+    1. Auto height calculation: (speed × 2.8) × delay
+    2. Dynamic auto win delay: 10000 / speed
+    3. Compact 200x200 GUI
+    4. All original functionality preserved
 --]]
 
 ------ SERVICES ------
@@ -15,9 +15,10 @@ local RunService = game:GetService("RunService")
 ------ CONSTANTS ------
 local PAUSE_INTERVAL = 60 * 60  -- 1 hour
 local PAUSE_DURATION = 30       -- 30 seconds
-local WIN_DELAY = 20            -- 20 seconds for Auto Win
+local WIN_DELAY_BASE = 10000    -- Base for auto win delay calculation
 local DEFAULT_HEIGHT = 5000
 local DEFAULT_DELAY = 5
+local HEIGHT_MULTIPLIER = 2.8   -- Height calculation multiplier
 
 ------ STATE MANAGEMENT ------
 local State = {
@@ -34,10 +35,31 @@ local State = {
     nextLoopTime = 0,
     lastWinTime = 0,
     hookEnabled = true,
-    minimized = false
+    minimized = false,
+    climbSpeed = 0,
+    climbing = false,
+    climbStartY = 0,
+    climbStartTime = 0,
+    maxY = 0
 }
 
------- COMPACT GUI CREATION ------
+------ UTILITY FUNCTIONS ------
+local function GetWinDelay()
+    return State.climbSpeed > 0 and (WIN_DELAY_BASE / State.climbSpeed) or 20
+end
+
+local function CalculateHeight()
+    local delay = tonumber(GUI.DelayTextBox.Text) or DEFAULT_DELAY
+    return math.floor((State.climbSpeed * HEIGHT_MULTIPLIER) * delay)
+end
+
+local function UpdateHeight()
+    if State.climbSpeed > 0 then
+        GUI.HeightTextBox.Text = tostring(CalculateHeight())
+    end
+end
+
+------ GUI CREATION ------
 local function CreateGUI()
     local player = Players.LocalPlayer
     local playerGui = player:WaitForChild("PlayerGui")
@@ -54,7 +76,7 @@ local function CreateGUI()
     MainFrame.ResetOnSpawn = false
     MainFrame.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
-    -- Compact Main Frame (200x200)
+    -- Main Frame (200x200)
     local Frame = Instance.new("Frame")
     Frame.Size = UDim2.new(0, 200, 0, 200)
     Frame.Position = UDim2.new(0.5, -100, 0.5, -100)
@@ -70,7 +92,7 @@ local function CreateGUI()
     UICorner.CornerRadius = UDim.new(0, 8)
     UICorner.Parent = Frame
 
-    -- Title Bar (Compact)
+    -- Title Bar
     local TitleBar = Instance.new("Frame")
     TitleBar.Size = UDim2.new(1, 0, 0, 25)
     TitleBar.Position = UDim2.new(0, 0, 0, 0)
@@ -123,7 +145,7 @@ local function CreateGUI()
     MinimizeCorner.CornerRadius = UDim.new(0, 4)
     MinimizeCorner.Parent = MinimizeButton
 
-    -- Compact Content Frame
+    -- Content Frame
     local Content = Instance.new("Frame")
     Content.Name = "Content"
     Content.Size = UDim2.new(1, -10, 1, -35)
@@ -131,14 +153,14 @@ local function CreateGUI()
     Content.BackgroundTransparency = 1
     Content.Parent = Frame
 
-    -- Compact Input Section
+    -- Input Frame
     local InputFrame = Instance.new("Frame")
     InputFrame.Size = UDim2.new(1, 0, 0, 50)
     InputFrame.Position = UDim2.new(0, 0, 0, 0)
     InputFrame.BackgroundTransparency = 1
     InputFrame.Parent = Content
 
-    -- Height Input (Single Line)
+    -- Height Input
     local HeightLabel = Instance.new("TextLabel")
     HeightLabel.Size = UDim2.new(0.4, 0, 0, 20)
     HeightLabel.Position = UDim2.new(0, 0, 0, 0)
@@ -154,7 +176,7 @@ local function CreateGUI()
     HeightBox.Size = UDim2.new(0.6, 0, 0, 20)
     HeightBox.Position = UDim2.new(0.4, 0, 0, 0)
     HeightBox.Text = tostring(DEFAULT_HEIGHT)
-    HeightBox.PlaceholderText = "Value"
+    HeightBox.PlaceholderText = "Auto"
     HeightBox.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
     HeightBox.TextColor3 = Color3.new(1, 1, 1)
     HeightBox.Font = Enum.Font.Gotham
@@ -165,7 +187,7 @@ local function CreateGUI()
     HeightCorner.CornerRadius = UDim.new(0, 4)
     HeightCorner.Parent = HeightBox
 
-    -- Delay Input (Single Line)
+    -- Delay Input
     local DelayLabel = Instance.new("TextLabel")
     DelayLabel.Size = UDim2.new(0.4, 0, 0, 20)
     DelayLabel.Position = UDim2.new(0, 0, 0, 25)
@@ -192,7 +214,7 @@ local function CreateGUI()
     DelayCorner.CornerRadius = UDim.new(0, 4)
     DelayCorner.Parent = DelayBox
 
-    -- Status Indicator (Compact)
+    -- Status Indicator
     local StatusLabel = Instance.new("TextLabel")
     StatusLabel.Size = UDim2.new(1, 0, 0, 15)
     StatusLabel.Position = UDim2.new(0, 0, 0, 55)
@@ -204,15 +226,27 @@ local function CreateGUI()
     StatusLabel.TextXAlignment = Enum.TextXAlignment.Center
     StatusLabel.Parent = Content
 
-    -- Main Button (Initially black)
+    -- Speed Indicator
+    local SpeedLabel = Instance.new("TextLabel")
+    SpeedLabel.Size = UDim2.new(1, 0, 0, 15)
+    SpeedLabel.Position = UDim2.new(0, 0, 0, 70)
+    SpeedLabel.Text = "Speed: 0 studs/s"
+    SpeedLabel.TextColor3 = Color3.new(1, 1, 1)
+    SpeedLabel.BackgroundTransparency = 1
+    SpeedLabel.Font = Enum.Font.Gotham
+    SpeedLabel.TextSize = 11
+    SpeedLabel.TextXAlignment = Enum.TextXAlignment.Center
+    SpeedLabel.Parent = Content
+
+    -- Main Button
     local MainButton = Instance.new("TextButton")
     MainButton.Size = UDim2.new(1, 0, 0, 30)
-    MainButton.Position = UDim2.new(0, 0, 0, 75)
+    MainButton.Position = UDim2.new(0, 0, 0, 90)
     MainButton.Text = "START AUTO COIN"
     MainButton.Font = Enum.Font.GothamBold
     MainButton.TextSize = 12
     MainButton.TextColor3 = Color3.new(1, 1, 1)
-    MainButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0) -- Initial black color
+    MainButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
     MainButton.Parent = Content
 
     local MainCorner = Instance.new("UICorner")
@@ -222,7 +256,7 @@ local function CreateGUI()
     -- Toggle Buttons Frame
     local ToggleFrame = Instance.new("Frame")
     ToggleFrame.Size = UDim2.new(1, 0, 0, 25)
-    ToggleFrame.Position = UDim2.new(0, 0, 0, 110)
+    ToggleFrame.Position = UDim2.new(0, 0, 0, 125)
     ToggleFrame.BackgroundTransparency = 1
     ToggleFrame.Parent = Content
 
@@ -259,7 +293,7 @@ local function CreateGUI()
     -- Status Message
     local StatusMessage = Instance.new("TextLabel")
     StatusMessage.Size = UDim2.new(1, 0, 0, 15)
-    StatusMessage.Position = UDim2.new(0, 0, 0, 140)
+    StatusMessage.Position = UDim2.new(0, 0, 0, 155)
     StatusMessage.Text = "JUMP FROM TOWER FIRST"
     StatusMessage.TextColor3 = Color3.fromRGB(255, 100, 100)
     StatusMessage.BackgroundTransparency = 1
@@ -276,6 +310,7 @@ local function CreateGUI()
         HeightTextBox = HeightBox,
         DelayTextBox = DelayBox,
         StatusLabel = StatusLabel,
+        SpeedLabel = SpeedLabel,
         StartStopButton = MainButton,
         AutoWinToggle = WinButton,
         AutoTokenToggle = TokenButton,
@@ -293,7 +328,7 @@ end
 
 local function SendJumpData()
     if State.jumpID then
-        local height = tonumber(GUI.HeightTextBox.Text) or DEFAULT_HEIGHT
+        local height = tonumber(GUI.HeightTextBox.Text) or CalculateHeight()
         SendRemoteEvent("JumpResults", State.jumpID, height)
     end
 end
@@ -319,14 +354,12 @@ end
 
 ------ CORE LOGIC ------
 local function UpdateStatus()
-    -- Update status with solid dots (● = ready, ○ = not ready)
     local coinIcon = State.jumpID and State.landingID and "●" or "○"
     local winIcon = State.winID and "●" or "○"
     local tokenIcon = State.magicTokenID and "●" or "○"
     
     GUI.StatusLabel.Text = string.format("Coin[%s] Win[%s] Token[%s]", coinIcon, winIcon, tokenIcon)
     
-    -- Update main button and status message
     if State.jumpID and State.landingID then
         State.isReady = true
         GUI.StartStopButton.BackgroundColor3 = State.running and Color3.fromRGB(0, 200, 50) or Color3.fromRGB(70, 140, 80)
@@ -346,31 +379,27 @@ local function RunLoop()
         State.lastLoopTime = os.time()
         State.nextLoopTime = State.lastLoopTime + internalDelay
         
-        -- Calculate midpoint for token (50% of delay)
-        local tokenTime = State.lastLoopTime + (internalDelay / 2)
-        
         -- Handle auto token at midpoint
         if State.autoTokenEnabled and State.magicTokenID then
+            local tokenTime = State.lastLoopTime + (internalDelay / 2)
             while os.time() < tokenTime and State.running and State.hookEnabled do
-                local remaining = tokenTime - os.time()
-                GUI.StatusMessage.Text = string.format("TOKEN IN %.1fs", remaining > 0 and remaining or 0)
                 task.wait(0.1)
             end
-            
             if State.running and State.hookEnabled then
                 SendTokenData()
             end
         end
         
-        -- Handle auto win
-        if State.autoWinEnabled and os.time() - State.lastWinTime >= WIN_DELAY then
+        -- Handle auto win with dynamic delay
+        local currentWinDelay = GetWinDelay()
+        if State.autoWinEnabled and os.time() - State.lastWinTime >= currentWinDelay then
             SendWinData()
         end
         
-        -- Wait remaining time until coin cycle
+        -- Wait remaining time
         while os.time() < State.nextLoopTime and State.running and State.hookEnabled do
             local remaining = State.nextLoopTime - os.time()
-            local winRemaining = WIN_DELAY - (os.time() - State.lastWinTime)
+            local winRemaining = currentWinDelay - (os.time() - State.lastWinTime)
             local statusText = string.format("RUNNING (%.1fs)", remaining)
             
             if State.autoWinEnabled then
@@ -387,7 +416,7 @@ local function RunLoop()
         SendJumpData()
         SendLandingData()
         
-        -- Handle auto-pause system
+        -- Auto-pause system
         State.runTime = State.runTime + (os.time() - State.lastLoopTime)
         if State.runTime >= PAUSE_INTERVAL then
             State.running = false
@@ -401,6 +430,55 @@ local function RunLoop()
     if State.hookEnabled then
         UpdateStatus()
     end
+end
+
+------ CLIMB SPEED METER LOGIC ------
+local function SetupCharacter(char)
+    local humanoid = char:WaitForChild("Humanoid")
+
+    humanoid.StateChanged:Connect(function(_, new)
+        if new == Enum.HumanoidStateType.Climbing then
+            -- Start climbing session
+            State.climbStartY = char:WaitForChild("HumanoidRootPart").Position.Y
+            State.climbStartTime = tick()
+            State.maxY = State.climbStartY
+            State.climbing = true
+        else
+            if State.climbing then
+                -- End climbing session
+                local climbEndY = State.maxY
+                local climbEndTime = tick()
+                local totalY = climbEndY - State.climbStartY
+                local totalTime = climbEndTime - State.climbStartTime
+
+                if totalY > 0 and totalTime > 0 then
+                    State.climbSpeed = totalY / totalTime
+                    GUI.SpeedLabel.Text = string.format("Speed: %.2f studs/s", State.climbSpeed)
+                    UpdateHeight()
+                    
+                    -- Show updated win delay if auto win is enabled
+                    if State.autoWinEnabled then
+                        GUI.StatusMessage.Text = string.format("WIN DELAY: %.1fs", GetWinDelay())
+                        task.wait(2)
+                        if State.running then
+                            GUI.StatusMessage.Text = "RUNNING..."
+                        end
+                    end
+                end
+                State.climbing = false
+            end
+        end
+    end)
+
+    -- Track maximum height during climb
+    RunService.Heartbeat:Connect(function()
+        if State.climbing and char:FindFirstChild("HumanoidRootPart") then
+            local y = char.HumanoidRootPart.Position.Y
+            if y > State.maxY then
+                State.maxY = y
+            end
+        end
+    end)
 end
 
 ------ EVENT HANDLERS ------
@@ -430,6 +508,13 @@ local function InitializeEventHandlers()
                 GUI.AutoWinToggle.Text = "WIN: ON"
                 GUI.AutoWinToggle.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
                 State.lastWinTime = os.time()
+                if State.climbSpeed > 0 then
+                    GUI.StatusMessage.Text = string.format("WIN DELAY: %.1fs", GetWinDelay())
+                    task.wait(2)
+                    if State.running then
+                        GUI.StatusMessage.Text = "RUNNING..."
+                    end
+                end
             else
                 GUI.AutoWinToggle.Text = "WIN: OFF"
                 GUI.AutoWinToggle.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
@@ -451,10 +536,16 @@ local function InitializeEventHandlers()
         end
     end)
 
+    -- Delay box change handler
+    GUI.DelayTextBox:GetPropertyChangedSignal("Text"):Connect(function()
+        if State.climbSpeed > 0 then
+            UpdateHeight()
+        end
+    end)
+
     -- Minimize button
     GUI.MinimizeButton.MouseButton1Click:Connect(function()
         State.minimized = not State.minimized
-        
         if State.minimized then
             GUI.Frame.Size = UDim2.new(0, 100, 0, 25)
             GUI.MinimizeButton.Text = "+"
@@ -523,4 +614,11 @@ GUI = CreateGUI()
 InitializeEventHandlers()
 InitializeRemoteHook()
 
-print("Auto Coin V3 - Compact Version Loaded Successfully!")
+-- Set up character climbing detection
+local LocalPlayer = Players.LocalPlayer
+if LocalPlayer.Character then
+    SetupCharacter(LocalPlayer.Character)
+end
+LocalPlayer.CharacterAdded:Connect(SetupCharacter)
+
+print("Auto Coin V3 - Enhanced Version Loaded Successfully!")

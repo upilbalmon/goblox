@@ -1,9 +1,9 @@
 --[[
-    AUTO COIN V3 - Minimalist Complete Version
+    AUTO COIN V3 - Minimalist Complete Version with Timing Adjustments
     Features:
     1. Auto Claim Coin with customizable height/delay
-    2. Auto Win with 10-second delay
-    3. Auto Magic Token with 10-second delay
+    2. Auto Win with dynamic delay (60% of coin delay * 5, max 20s)
+    3. Auto Magic Token with 50% offset timing
     4. Minimalist UI design
     5. Fully functional minimize button
 --]]
@@ -16,8 +16,6 @@ local RunService = game:GetService("RunService")
 ------ CONSTANTS ------
 local PAUSE_INTERVAL = 60 * 60  -- 10 minutes
 local PAUSE_DURATION = 30       -- 30 seconds
-local WIN_DELAY = 20            -- 10 seconds for Auto Win
-local TOKEN_DELAY = 20          -- 10 seconds for Auto Magic Token
 local DEFAULT_HEIGHT = 5000
 local DEFAULT_DELAY = 5
 
@@ -347,28 +345,33 @@ end
 
 local function RunLoop()
     while State.running and State.hookEnabled do
-        local internalDelay = tonumber(GUI.DelayTextBox.Text) or DEFAULT_DELAY
+        local coinDelay = tonumber(GUI.DelayTextBox.Text) or DEFAULT_DELAY
+        
+        -- Calculate dynamic delays (updated to use 60% instead of 40%)
+        local winDelay = math.min(20, (coinDelay * 0.6) * 5)  -- 60% of coin delay * 5, max 20s
+        local tokenOffset = coinDelay * 0.5  -- 50% of coin delay
+        
         State.lastLoopTime = os.time()
-        State.nextLoopTime = State.lastLoopTime + internalDelay
+        State.nextLoopTime = State.lastLoopTime + coinDelay
         
         -- Execute coin actions
         SendJumpData()
         
-        -- Handle auto win with separate delay
-        if State.autoWinEnabled and os.time() - State.lastWinTime >= WIN_DELAY then
+        -- Handle auto win with dynamic delay
+        if State.autoWinEnabled and os.time() - State.lastWinTime >= winDelay then
             SendWinData()
         end
         
-        -- Handle auto token with separate delay
-        if State.autoTokenEnabled and os.time() - State.lastTokenTime >= TOKEN_DELAY then
+        -- Handle auto token with offset timing (50% of coin delay)
+        if State.autoTokenEnabled and os.time() >= (State.nextLoopTime - tokenOffset) then
             SendTokenData()
         end
         
         -- Update status during delay
         while os.time() < State.nextLoopTime and State.running and State.hookEnabled do
             local remaining = State.nextLoopTime - os.time()
-            local winRemaining = WIN_DELAY - (os.time() - State.lastWinTime)
-            local tokenRemaining = TOKEN_DELAY - (os.time() - State.lastTokenTime)
+            local winRemaining = winDelay - (os.time() - State.lastWinTime)
+            local tokenRemaining = (State.nextLoopTime - tokenOffset) - os.time()
             local statusText = string.format("Running (%.1fs)", remaining)
             
             if State.autoWinEnabled then
@@ -533,4 +536,4 @@ GUI = CreateGUI()
 InitializeEventHandlers()
 InitializeRemoteHook()
 
-print("Auto Coin V3 - Minimalist Complete Version Loaded Successfully!")
+print("Auto Coin V3 - Minimalist Complete Version with Timing Adjustments Loaded Successfully!")

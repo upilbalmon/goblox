@@ -1,16 +1,19 @@
 --[[
     AUTO COIN V3 - Enhanced Version
     Features:
-    1. Auto height calculation: (speed × 2.8) × delay
+    1. Auto height calculation: (speed × 2.8) × delay (max 14400)
     2. Dynamic auto win delay: 10000 / speed
     3. Compact 200x200 GUI
     4. All original functionality preserved
+    5. Height capped at 14400
+    6. Anti-AFK system (every 5 minutes)
 --]]
 
 ------ SERVICES ------
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 
 ------ CONSTANTS ------
 local PAUSE_INTERVAL = 60 * 60  -- 1 hour
@@ -19,6 +22,8 @@ local WIN_DELAY_BASE = 10000    -- Base for auto win delay calculation
 local DEFAULT_HEIGHT = 5000
 local DEFAULT_DELAY = 5
 local HEIGHT_MULTIPLIER = 2.8   -- Height calculation multiplier
+local MAX_HEIGHT = 14400        -- Maximum height cap
+local AFK_PREVENTION_INTERVAL = 300 -- 5 minutes in seconds
 
 ------ STATE MANAGEMENT ------
 local State = {
@@ -40,7 +45,8 @@ local State = {
     climbing = false,
     climbStartY = 0,
     climbStartTime = 0,
-    maxY = 0
+    maxY = 0,
+    lastAFKAction = 0
 }
 
 ------ UTILITY FUNCTIONS ------
@@ -50,12 +56,48 @@ end
 
 local function CalculateHeight()
     local delay = tonumber(GUI.DelayTextBox.Text) or DEFAULT_DELAY
-    return math.floor((State.climbSpeed * HEIGHT_MULTIPLIER) * delay)
+    local calculatedHeight = math.floor((State.climbSpeed * HEIGHT_MULTIPLIER) * delay)
+    return math.min(calculatedHeight, MAX_HEIGHT)
 end
 
 local function UpdateHeight()
     if State.climbSpeed > 0 then
         GUI.HeightTextBox.Text = tostring(CalculateHeight())
+    end
+end
+
+------ ANTI-AFK SYSTEM ------
+local function PerformAntiAFK()
+    -- Simulate mouse movement
+    local virtualInput = UserInputService
+    local currentPosition = virtualInput:GetMouseLocation()
+    
+    -- Move mouse slightly
+    virtualInput:SetMouseLocation(currentPosition.X + 5, currentPosition.Y)
+    task.wait(0.1)
+    virtualInput:SetMouseLocation(currentPosition.X, currentPosition.Y + 5)
+    task.wait(0.1)
+    virtualInput:SetMouseLocation(currentPosition.X - 5, currentPosition.Y)
+    task.wait(0.1)
+    virtualInput:SetMouseLocation(currentPosition.X, currentPosition.Y - 5)
+    task.wait(0.1)
+    virtualInput:SetMouseLocation(currentPosition.X, currentPosition.Y)
+    
+    State.lastAFKAction = os.time()
+    GUI.StatusMessage.Text = "ANTI-AFK ACTIVATED"
+    task.wait(2)
+    if State.running then
+        GUI.StatusMessage.Text = "RUNNING..."
+    end
+end
+
+local function AntiAFK()
+    while State.hookEnabled do
+        local now = os.time()
+        if now - State.lastAFKAction >= AFK_PREVENTION_INTERVAL then
+            PerformAntiAFK()
+        end
+        task.wait(10) -- Check every 10 seconds
     end
 end
 
@@ -620,5 +662,8 @@ if LocalPlayer.Character then
     SetupCharacter(LocalPlayer.Character)
 end
 LocalPlayer.CharacterAdded:Connect(SetupCharacter)
+
+-- Start anti-AFK system
+coroutine.wrap(AntiAFK)()
 
 print("Auto Coin V3 - Enhanced Version Loaded Successfully!")

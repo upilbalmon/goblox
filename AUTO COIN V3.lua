@@ -1,11 +1,10 @@
 --[[
-    AUTO COIN V3 - Midpoint Token Timing
+    AUTO COIN V3 - Compact Fixed Version
     Features:
-    1. Auto Claim Coin with customizable height/delay
-    2. Auto Win with 20-second delay
-    3. Auto Magic Token fires at midpoint of Auto Coin delay
-    4. Modern UI with minimize functionality
-    5. Solid dot status indicators (●/○)
+    1. Fixed GUI visibility issues
+    2. More compact 200x200 layout
+    3. Proper initial black start button
+    4. Preserved all original functionality
 --]]
 
 ------ SERVICES ------
@@ -38,7 +37,7 @@ local State = {
     minimized = false
 }
 
------- GUI CREATION ------
+------ COMPACT GUI CREATION ------
 local function CreateGUI()
     local player = Players.LocalPlayer
     local playerGui = player:WaitForChild("PlayerGui")
@@ -55,10 +54,10 @@ local function CreateGUI()
     MainFrame.ResetOnSpawn = false
     MainFrame.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
-    -- Main Window Frame
+    -- Compact Main Frame (200x200)
     local Frame = Instance.new("Frame")
-    Frame.Size = UDim2.new(0, 260, 0, 240)
-    Frame.Position = UDim2.new(0.5, -130, 0.5, -120)
+    Frame.Size = UDim2.new(0, 200, 0, 200)
+    Frame.Position = UDim2.new(0.5, -100, 0.5, -100)
     Frame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
     Frame.BackgroundTransparency = 0.1
     Frame.BorderSizePixel = 0
@@ -71,9 +70,9 @@ local function CreateGUI()
     UICorner.CornerRadius = UDim.new(0, 8)
     UICorner.Parent = Frame
 
-    -- Title Bar
+    -- Title Bar (Compact)
     local TitleBar = Instance.new("Frame")
-    TitleBar.Size = UDim2.new(1, 0, 0, 30)
+    TitleBar.Size = UDim2.new(1, 0, 0, 25)
     TitleBar.Position = UDim2.new(0, 0, 0, 0)
     TitleBar.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
     TitleBar.BorderSizePixel = 0
@@ -91,156 +90,149 @@ local function CreateGUI()
     TitleText.TextColor3 = Color3.new(1, 1, 1)
     TitleText.BackgroundTransparency = 1
     TitleText.Font = Enum.Font.GothamBold
-    TitleText.TextSize = 14
+    TitleText.TextSize = 13
     TitleText.Parent = TitleBar
 
     -- Close Button
     local CloseButton = Instance.new("TextButton")
-    CloseButton.Size = UDim2.new(0, 30, 0, 30)
-    CloseButton.Position = UDim2.new(1, -30, 0, 0)
+    CloseButton.Size = UDim2.new(0, 25, 0, 25)
+    CloseButton.Position = UDim2.new(1, -25, 0, 0)
     CloseButton.Text = "×"
     CloseButton.Font = Enum.Font.GothamBold
-    CloseButton.TextSize = 18
+    CloseButton.TextSize = 16
     CloseButton.TextColor3 = Color3.new(1, 1, 1)
     CloseButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
     CloseButton.Parent = TitleBar
 
     local CloseCorner = Instance.new("UICorner")
-    CloseCorner.CornerRadius = UDim.new(0, 8)
+    CloseCorner.CornerRadius = UDim.new(0, 4)
     CloseCorner.Parent = CloseButton
 
     -- Minimize Button
     local MinimizeButton = Instance.new("TextButton")
-    MinimizeButton.Size = UDim2.new(0, 30, 0, 30)
-    MinimizeButton.Position = UDim2.new(1, -60, 0, 0)
+    MinimizeButton.Size = UDim2.new(0, 25, 0, 25)
+    MinimizeButton.Position = UDim2.new(1, -50, 0, 0)
     MinimizeButton.Text = "-"
     MinimizeButton.Font = Enum.Font.GothamBold
-    MinimizeButton.TextSize = 18
+    MinimizeButton.TextSize = 16
     MinimizeButton.TextColor3 = Color3.new(1, 1, 1)
     MinimizeButton.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
     MinimizeButton.Parent = TitleBar
 
     local MinimizeCorner = Instance.new("UICorner")
-    MinimizeCorner.CornerRadius = UDim.new(0, 8)
+    MinimizeCorner.CornerRadius = UDim.new(0, 4)
     MinimizeCorner.Parent = MinimizeButton
 
-    -- Content Frame
+    -- Compact Content Frame
     local Content = Instance.new("Frame")
     Content.Name = "Content"
-    Content.Size = UDim2.new(1, -10, 1, -70)
-    Content.Position = UDim2.new(0, 5, 0, 35)
+    Content.Size = UDim2.new(1, -10, 1, -35)
+    Content.Position = UDim2.new(0, 5, 0, 30)
     Content.BackgroundTransparency = 1
     Content.Parent = Frame
 
-    -- Input Section
+    -- Compact Input Section
     local InputFrame = Instance.new("Frame")
-    InputFrame.Size = UDim2.new(1, 0, 0, 60)
+    InputFrame.Size = UDim2.new(1, 0, 0, 50)
     InputFrame.Position = UDim2.new(0, 0, 0, 0)
     InputFrame.BackgroundTransparency = 1
     InputFrame.Parent = Content
 
-    -- Height Input
-    local HeightContainer = Instance.new("Frame")
-    HeightContainer.Size = UDim2.new(1, 0, 0, 25)
-    HeightContainer.Position = UDim2.new(0, 0, 0, 0)
-    HeightContainer.BackgroundTransparency = 1
-    HeightContainer.Parent = InputFrame
-
+    -- Height Input (Single Line)
     local HeightLabel = Instance.new("TextLabel")
-    HeightLabel.Size = UDim2.new(0.4, 0, 1, 0)
+    HeightLabel.Size = UDim2.new(0.4, 0, 0, 20)
     HeightLabel.Position = UDim2.new(0, 0, 0, 0)
     HeightLabel.Text = "Height:"
     HeightLabel.TextColor3 = Color3.new(1, 1, 1)
     HeightLabel.BackgroundTransparency = 1
     HeightLabel.Font = Enum.Font.Gotham
-    HeightLabel.TextSize = 12
+    HeightLabel.TextSize = 11
     HeightLabel.TextXAlignment = Enum.TextXAlignment.Left
-    HeightLabel.Parent = HeightContainer
+    HeightLabel.Parent = InputFrame
 
     local HeightBox = Instance.new("TextBox")
-    HeightBox.Size = UDim2.new(0.6, -5, 1, 0)
+    HeightBox.Size = UDim2.new(0.6, 0, 0, 20)
     HeightBox.Position = UDim2.new(0.4, 0, 0, 0)
     HeightBox.Text = tostring(DEFAULT_HEIGHT)
     HeightBox.PlaceholderText = "Value"
     HeightBox.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
     HeightBox.TextColor3 = Color3.new(1, 1, 1)
     HeightBox.Font = Enum.Font.Gotham
-    HeightBox.TextSize = 12
-    HeightBox.Parent = HeightContainer
+    HeightBox.TextSize = 11
+    HeightBox.Parent = InputFrame
 
     local HeightCorner = Instance.new("UICorner")
     HeightCorner.CornerRadius = UDim.new(0, 4)
     HeightCorner.Parent = HeightBox
 
-    -- Delay Input
-    local DelayContainer = Instance.new("Frame")
-    DelayContainer.Size = UDim2.new(1, 0, 0, 25)
-    DelayContainer.Position = UDim2.new(0, 0, 0, 30)
-    DelayContainer.BackgroundTransparency = 1
-    DelayContainer.Parent = InputFrame
-
+    -- Delay Input (Single Line)
     local DelayLabel = Instance.new("TextLabel")
-    DelayLabel.Size = UDim2.new(0.4, 0, 1, 0)
-    DelayLabel.Position = UDim2.new(0, 0, 0, 0)
+    DelayLabel.Size = UDim2.new(0.4, 0, 0, 20)
+    DelayLabel.Position = UDim2.new(0, 0, 0, 25)
     DelayLabel.Text = "Delay:"
     DelayLabel.TextColor3 = Color3.new(1, 1, 1)
     DelayLabel.BackgroundTransparency = 1
     DelayLabel.Font = Enum.Font.Gotham
-    DelayLabel.TextSize = 12
+    DelayLabel.TextSize = 11
     DelayLabel.TextXAlignment = Enum.TextXAlignment.Left
-    DelayLabel.Parent = DelayContainer
+    DelayLabel.Parent = InputFrame
 
     local DelayBox = Instance.new("TextBox")
-    DelayBox.Size = UDim2.new(0.6, -5, 1, 0)
-    DelayBox.Position = UDim2.new(0.4, 0, 0, 0)
+    DelayBox.Size = UDim2.new(0.6, 0, 0, 20)
+    DelayBox.Position = UDim2.new(0.4, 0, 0, 25)
     DelayBox.Text = tostring(DEFAULT_DELAY)
-    DelayBox.PlaceholderText = "Seconds"
+    DelayBox.PlaceholderText = "Sec"
     DelayBox.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
     DelayBox.TextColor3 = Color3.new(1, 1, 1)
     DelayBox.Font = Enum.Font.Gotham
-    DelayBox.TextSize = 12
-    DelayBox.Parent = DelayContainer
+    DelayBox.TextSize = 11
+    DelayBox.Parent = InputFrame
 
     local DelayCorner = Instance.new("UICorner")
     DelayCorner.CornerRadius = UDim.new(0, 4)
     DelayCorner.Parent = DelayBox
 
-    -- Control Buttons
-    local ButtonFrame = Instance.new("Frame")
-    ButtonFrame.Size = UDim2.new(1, 0, 0, 80)
-    ButtonFrame.Position = UDim2.new(0, 0, 0, 65)
-    ButtonFrame.BackgroundTransparency = 1
-    ButtonFrame.Parent = Content
+    -- Status Indicator (Compact)
+    local StatusLabel = Instance.new("TextLabel")
+    StatusLabel.Size = UDim2.new(1, 0, 0, 15)
+    StatusLabel.Position = UDim2.new(0, 0, 0, 55)
+    StatusLabel.Text = "Coin[○] Win[○] Token[○]"
+    StatusLabel.TextColor3 = Color3.new(1, 1, 1)
+    StatusLabel.BackgroundTransparency = 1
+    StatusLabel.Font = Enum.Font.Gotham
+    StatusLabel.TextSize = 11
+    StatusLabel.TextXAlignment = Enum.TextXAlignment.Center
+    StatusLabel.Parent = Content
 
-    -- Main Button
+    -- Main Button (Initially black)
     local MainButton = Instance.new("TextButton")
-    MainButton.Size = UDim2.new(1, 0, 0, 35)
-    MainButton.Position = UDim2.new(0, 0, 0, 0)
+    MainButton.Size = UDim2.new(1, 0, 0, 30)
+    MainButton.Position = UDim2.new(0, 0, 0, 75)
     MainButton.Text = "START AUTO COIN"
     MainButton.Font = Enum.Font.GothamBold
-    MainButton.TextSize = 14
+    MainButton.TextSize = 12
     MainButton.TextColor3 = Color3.new(1, 1, 1)
-    MainButton.BackgroundColor3 = Color3.fromRGB(70, 140, 80)
-    MainButton.Parent = ButtonFrame
+    MainButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0) -- Initial black color
+    MainButton.Parent = Content
 
     local MainCorner = Instance.new("UICorner")
     MainCorner.CornerRadius = UDim.new(0, 6)
     MainCorner.Parent = MainButton
 
-    -- Toggle Frame
+    -- Toggle Buttons Frame
     local ToggleFrame = Instance.new("Frame")
-    ToggleFrame.Size = UDim2.new(1, 0, 0, 35)
-    ToggleFrame.Position = UDim2.new(0, 0, 0, 45)
+    ToggleFrame.Size = UDim2.new(1, 0, 0, 25)
+    ToggleFrame.Position = UDim2.new(0, 0, 0, 110)
     ToggleFrame.BackgroundTransparency = 1
-    ToggleFrame.Parent = ButtonFrame
+    ToggleFrame.Parent = Content
 
-    -- Win Button
+    -- Auto Win Toggle
     local WinButton = Instance.new("TextButton")
     WinButton.Size = UDim2.new(0.48, 0, 1, 0)
     WinButton.Position = UDim2.new(0, 0, 0, 0)
-    WinButton.Text = "AUTO WIN OFF"
+    WinButton.Text = "WIN: OFF"
     WinButton.Font = Enum.Font.Gotham
-    WinButton.TextSize = 12
+    WinButton.TextSize = 11
     WinButton.TextColor3 = Color3.new(1, 1, 1)
     WinButton.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
     WinButton.Parent = ToggleFrame
@@ -249,13 +241,13 @@ local function CreateGUI()
     WinCorner.CornerRadius = UDim.new(0, 6)
     WinCorner.Parent = WinButton
 
-    -- Token Button
+    -- Auto Token Toggle
     local TokenButton = Instance.new("TextButton")
     TokenButton.Size = UDim2.new(0.48, 0, 1, 0)
     TokenButton.Position = UDim2.new(0.52, 0, 0, 0)
-    TokenButton.Text = "AUTO TOKEN OFF"
+    TokenButton.Text = "TOKEN: OFF"
     TokenButton.Font = Enum.Font.Gotham
-    TokenButton.TextSize = 12
+    TokenButton.TextSize = 11
     TokenButton.TextColor3 = Color3.new(1, 1, 1)
     TokenButton.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
     TokenButton.Parent = ToggleFrame
@@ -264,29 +256,17 @@ local function CreateGUI()
     TokenCorner.CornerRadius = UDim.new(0, 6)
     TokenCorner.Parent = TokenButton
 
-    -- Hook Status
-    local HookStatus = Instance.new("TextLabel")
-    HookStatus.Size = UDim2.new(1, -10, 0, 20)
-    HookStatus.Position = UDim2.new(0, 5, 1, -60)
-    HookStatus.Text = "JUMP FROM THE TOWER FIRST!"
-    HookStatus.TextColor3 = Color3.fromRGB(255, 100, 100) -- Red
-    HookStatus.BackgroundTransparency = 1
-    HookStatus.Font = Enum.Font.Gotham
-    HookStatus.TextSize = 12
-    HookStatus.TextXAlignment = Enum.TextXAlignment.Center
-    HookStatus.Parent = Frame
-
-    -- Status Indicator
-    local StatusLabel = Instance.new("TextLabel")
-    StatusLabel.Size = UDim2.new(1, -10, 0, 20)
-    StatusLabel.Position = UDim2.new(0, 5, 1, -35)
-    StatusLabel.Text = "Coin[○] Win[○] Token[○]" -- Default empty state
-    StatusLabel.TextColor3 = Color3.new(1, 1, 1)
-    StatusLabel.BackgroundTransparency = 1
-    StatusLabel.Font = Enum.Font.Gotham
-    StatusLabel.TextSize = 12
-    StatusLabel.TextXAlignment = Enum.TextXAlignment.Center
-    StatusLabel.Parent = Frame
+    -- Status Message
+    local StatusMessage = Instance.new("TextLabel")
+    StatusMessage.Size = UDim2.new(1, 0, 0, 15)
+    StatusMessage.Position = UDim2.new(0, 0, 0, 140)
+    StatusMessage.Text = "JUMP FROM TOWER FIRST"
+    StatusMessage.TextColor3 = Color3.fromRGB(255, 100, 100)
+    StatusMessage.BackgroundTransparency = 1
+    StatusMessage.Font = Enum.Font.Gotham
+    StatusMessage.TextSize = 11
+    StatusMessage.TextXAlignment = Enum.TextXAlignment.Center
+    StatusMessage.Parent = Content
 
     -- Store references
     return {
@@ -299,7 +279,7 @@ local function CreateGUI()
         StartStopButton = MainButton,
         AutoWinToggle = WinButton,
         AutoTokenToggle = TokenButton,
-        HookStatus = HookStatus,
+        StatusMessage = StatusMessage,
         MinimizeButton = MinimizeButton,
         CloseButton = CloseButton
     }
@@ -346,15 +326,17 @@ local function UpdateStatus()
     
     GUI.StatusLabel.Text = string.format("Coin[%s] Win[%s] Token[%s]", coinIcon, winIcon, tokenIcon)
     
-    -- Update hook status
+    -- Update main button and status message
     if State.jumpID and State.landingID then
         State.isReady = true
-        GUI.HookStatus.Text = "READY TO START!"
-        GUI.HookStatus.TextColor3 = Color3.fromRGB(100, 255, 100) -- Green
+        GUI.StartStopButton.BackgroundColor3 = State.running and Color3.fromRGB(0, 200, 50) or Color3.fromRGB(70, 140, 80)
+        GUI.StatusMessage.Text = State.running and "RUNNING..." or "READY TO START!"
+        GUI.StatusMessage.TextColor3 = Color3.fromRGB(100, 255, 100)
     else
         State.isReady = false
-        GUI.HookStatus.Text = "JUMP FROM THE TOWER FIRST!"
-        GUI.HookStatus.TextColor3 = Color3.fromRGB(255, 100, 100) -- Red
+        GUI.StartStopButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        GUI.StatusMessage.Text = "JUMP FROM TOWER FIRST"
+        GUI.StatusMessage.TextColor3 = Color3.fromRGB(255, 100, 100)
     end
 end
 
@@ -369,10 +351,9 @@ local function RunLoop()
         
         -- Handle auto token at midpoint
         if State.autoTokenEnabled and State.magicTokenID then
-            -- Wait until token time
             while os.time() < tokenTime and State.running and State.hookEnabled do
                 local remaining = tokenTime - os.time()
-                GUI.HookStatus.Text = string.format("Preparing Token (%.1fs)", remaining > 0 and remaining or 0)
+                GUI.StatusMessage.Text = string.format("TOKEN IN %.1fs", remaining > 0 and remaining or 0)
                 task.wait(0.1)
             end
             
@@ -390,13 +371,13 @@ local function RunLoop()
         while os.time() < State.nextLoopTime and State.running and State.hookEnabled do
             local remaining = State.nextLoopTime - os.time()
             local winRemaining = WIN_DELAY - (os.time() - State.lastWinTime)
-            local statusText = string.format("Running (%.1fs)", remaining)
+            local statusText = string.format("RUNNING (%.1fs)", remaining)
             
             if State.autoWinEnabled then
-                statusText = statusText..string.format(" | Win (%.1fs)", winRemaining > 0 and winRemaining or 0)
+                statusText = statusText..string.format(" | WIN (%.1fs)", winRemaining > 0 and winRemaining or 0)
             end
             
-            GUI.HookStatus.Text = statusText
+            GUI.StatusMessage.Text = statusText
             task.wait(0.1)
         end
         
@@ -410,7 +391,7 @@ local function RunLoop()
         State.runTime = State.runTime + (os.time() - State.lastLoopTime)
         if State.runTime >= PAUSE_INTERVAL then
             State.running = false
-            GUI.HookStatus.Text = "Pausing for 30 seconds..."
+            GUI.StatusMessage.Text = "PAUSING FOR 30 SECONDS..."
             task.wait(PAUSE_DURATION)
             State.runTime = 0
             State.running = true
@@ -434,8 +415,8 @@ local function InitializeEventHandlers()
                 State.lastWinTime = os.time()
                 coroutine.wrap(RunLoop)()
             else
-                GUI.StartStopButton.Text = "AUTO COIN OFF"
-                GUI.StartStopButton.BackgroundColor3 = Color3.fromRGB(50, 50, 55)
+                GUI.StartStopButton.Text = "START AUTO COIN"
+                GUI.StartStopButton.BackgroundColor3 = Color3.fromRGB(70, 140, 80)
                 UpdateStatus()
             end
         end
@@ -446,12 +427,12 @@ local function InitializeEventHandlers()
         if State.winID then
             State.autoWinEnabled = not State.autoWinEnabled
             if State.autoWinEnabled then
-                GUI.AutoWinToggle.Text = "AUTO WIN ON"
+                GUI.AutoWinToggle.Text = "WIN: ON"
                 GUI.AutoWinToggle.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
                 State.lastWinTime = os.time()
             else
-                GUI.AutoWinToggle.Text = "AUTO WIN OFF"
-                GUI.AutoWinToggle.BackgroundColor3 = Color3.fromRGB(50, 50, 55)
+                GUI.AutoWinToggle.Text = "WIN: OFF"
+                GUI.AutoWinToggle.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
             end
         end
     end)
@@ -461,11 +442,11 @@ local function InitializeEventHandlers()
         if State.magicTokenID then
             State.autoTokenEnabled = not State.autoTokenEnabled
             if State.autoTokenEnabled then
-                GUI.AutoTokenToggle.Text = "AUTO TOKEN ON"
+                GUI.AutoTokenToggle.Text = "TOKEN: ON"
                 GUI.AutoTokenToggle.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
             else
-                GUI.AutoTokenToggle.Text = "AUTO TOKEN OFF"
-                GUI.AutoTokenToggle.BackgroundColor3 = Color3.fromRGB(50, 50, 55)
+                GUI.AutoTokenToggle.Text = "TOKEN: OFF"
+                GUI.AutoTokenToggle.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
             end
         end
     end)
@@ -475,19 +456,17 @@ local function InitializeEventHandlers()
         State.minimized = not State.minimized
         
         if State.minimized then
-            GUI.Frame.Size = UDim2.new(0, 100, 0, 30)
+            GUI.Frame.Size = UDim2.new(0, 100, 0, 25)
             GUI.MinimizeButton.Text = "+"
             GUI.Content.Visible = false
-            GUI.HookStatus.Visible = false
-            GUI.StatusLabel.Visible = false
+            GUI.StatusMessage.Visible = false
             GUI.TitleText.Position = UDim2.new(0.5, -25, 0, 0)
             GUI.TitleText.TextXAlignment = Enum.TextXAlignment.Center
         else
-            GUI.Frame.Size = UDim2.new(0, 260, 0, 240)
+            GUI.Frame.Size = UDim2.new(0, 200, 0, 200)
             GUI.MinimizeButton.Text = "-"
             GUI.Content.Visible = true
-            GUI.HookStatus.Visible = true
-            GUI.StatusLabel.Visible = true
+            GUI.StatusMessage.Visible = true
             GUI.TitleText.Position = UDim2.new(0.15, 0, 0, 0)
             GUI.TitleText.TextXAlignment = Enum.TextXAlignment.Left
         end
@@ -544,4 +523,4 @@ GUI = CreateGUI()
 InitializeEventHandlers()
 InitializeRemoteHook()
 
-print("Auto Coin V3 - Midpoint Token Timing Loaded Successfully!")
+print("Auto Coin V3 - Compact Version Loaded Successfully!")

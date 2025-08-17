@@ -1,19 +1,18 @@
 --[[
     AUTO COIN V3 - Enhanced Version
     Features:
-    1. Auto height calculation: (speed × 2.8) × delay (max 14400)
+    1. Auto height calculation: (speed × 2.8) × delay
     2. Dynamic auto win delay: 10000 / speed
     3. Compact 200x200 GUI
     4. All original functionality preserved
-    5. Height capped at 14400
-    6. Anti-AFK system (every 5 minutes)
+    5. Auto token delay formula: (10000/speed) with 1 decimal place
+    6. Max height limit: 14400
 --]]
 
 ------ SERVICES ------
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
 
 ------ CONSTANTS ------
 local PAUSE_INTERVAL = 60 * 60  -- 1 hour
@@ -22,8 +21,7 @@ local WIN_DELAY_BASE = 10000    -- Base for auto win delay calculation
 local DEFAULT_HEIGHT = 5000
 local DEFAULT_DELAY = 5
 local HEIGHT_MULTIPLIER = 2.8   -- Height calculation multiplier
-local MAX_HEIGHT = 14400        -- Maximum height cap
-local AFK_PREVENTION_INTERVAL = 300 -- 5 minutes in seconds
+local MAX_HEIGHT = 14400        -- Maximum height limit
 
 ------ STATE MANAGEMENT ------
 local State = {
@@ -45,8 +43,7 @@ local State = {
     climbing = false,
     climbStartY = 0,
     climbStartTime = 0,
-    maxY = 0,
-    lastAFKAction = 0
+    maxY = 0
 }
 
 ------ UTILITY FUNCTIONS ------
@@ -63,41 +60,6 @@ end
 local function UpdateHeight()
     if State.climbSpeed > 0 then
         GUI.HeightTextBox.Text = tostring(CalculateHeight())
-    end
-end
-
------- ANTI-AFK SYSTEM ------
-local function PerformAntiAFK()
-    -- Simulate mouse movement
-    local virtualInput = UserInputService
-    local currentPosition = virtualInput:GetMouseLocation()
-    
-    -- Move mouse slightly
-    virtualInput:SetMouseLocation(currentPosition.X + 5, currentPosition.Y)
-    task.wait(0.1)
-    virtualInput:SetMouseLocation(currentPosition.X, currentPosition.Y + 5)
-    task.wait(0.1)
-    virtualInput:SetMouseLocation(currentPosition.X - 5, currentPosition.Y)
-    task.wait(0.1)
-    virtualInput:SetMouseLocation(currentPosition.X, currentPosition.Y - 5)
-    task.wait(0.1)
-    virtualInput:SetMouseLocation(currentPosition.X, currentPosition.Y)
-    
-    State.lastAFKAction = os.time()
-    GUI.StatusMessage.Text = "ANTI-AFK ACTIVATED"
-    task.wait(2)
-    if State.running then
-        GUI.StatusMessage.Text = "RUNNING..."
-    end
-end
-
-local function AntiAFK()
-    while State.hookEnabled do
-        local now = os.time()
-        if now - State.lastAFKAction >= AFK_PREVENTION_INTERVAL then
-            PerformAntiAFK()
-        end
-        task.wait(10) -- Check every 10 seconds
     end
 end
 
@@ -150,7 +112,7 @@ local function CreateGUI()
     local TitleText = Instance.new("TextLabel")
     TitleText.Size = UDim2.new(0.7, 0, 1, 0)
     TitleText.Position = UDim2.new(0.15, 0, 0, 0)
-    TitleText.Text = "AUTO COIN V3"
+    TitleText.Text = "CAJT AUTO GACOR"
     TitleText.TextColor3 = Color3.new(1, 1, 1)
     TitleText.BackgroundTransparency = 1
     TitleText.Font = Enum.Font.GothamBold
@@ -418,6 +380,13 @@ end
 local function RunLoop()
     while State.running and State.hookEnabled do
         local internalDelay = tonumber(GUI.DelayTextBox.Text) or DEFAULT_DELAY
+        
+        -- Apply auto token delay formula when enabled
+        if State.autoTokenEnabled and State.climbSpeed > 0 then
+            internalDelay = math.floor((10000 / State.climbSpeed) * 10) / 10
+            GUI.DelayTextBox.Text = string.format("%.1f", internalDelay)
+        end
+        
         State.lastLoopTime = os.time()
         State.nextLoopTime = State.lastLoopTime + internalDelay
         
@@ -454,7 +423,7 @@ local function RunLoop()
         
         if not State.running or not State.hookEnabled then break end
         
-        -- Execute coin actions
+        -- Execute coin actions with height limit enforced
         SendJumpData()
         SendLandingData()
         
@@ -505,6 +474,12 @@ local function SetupCharacter(char)
                         if State.running then
                             GUI.StatusMessage.Text = "RUNNING..."
                         end
+                    end
+                    
+                    -- Update delay if auto token is enabled
+                    if State.autoTokenEnabled then
+                        local newDelay = math.floor((10000 / State.climbSpeed) * 10) / 10
+                        GUI.DelayTextBox.Text = string.format("%.1f", newDelay)
                     end
                 end
                 State.climbing = false
@@ -571,6 +546,11 @@ local function InitializeEventHandlers()
             if State.autoTokenEnabled then
                 GUI.AutoTokenToggle.Text = "TOKEN: ON"
                 GUI.AutoTokenToggle.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+                -- Update delay immediately when toggled on
+                if State.climbSpeed > 0 then
+                    local newDelay = math.floor((10000 / State.climbSpeed) * 10) / 10
+                    GUI.DelayTextBox.Text = string.format("%.1f", newDelay)
+                end
             else
                 GUI.AutoTokenToggle.Text = "TOKEN: OFF"
                 GUI.AutoTokenToggle.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
@@ -662,8 +642,5 @@ if LocalPlayer.Character then
     SetupCharacter(LocalPlayer.Character)
 end
 LocalPlayer.CharacterAdded:Connect(SetupCharacter)
-
--- Start anti-AFK system
-coroutine.wrap(AntiAFK)()
 
 print("Auto Coin V3 - Enhanced Version Loaded Successfully!")

@@ -269,16 +269,3 @@ SaveButton.MouseButton1Click:Connect(function()
         XBox.Text = ""
     end
 end)
-
--- (Opsional) Jika ingin memastikan frame selalu di atas:
-Frame.ZIndex = 50
-TitleBar.ZIndex = 51
-TitleText.ZIndex = 52
-TeleportButton.ZIndex = 53
-ReturnButton.ZIndex = 53
-LokasiButton.ZIndex = 53
-BookmarkBox.ZIndex = 53
-SaveButton.ZIndex = 53
-BookmarkList.ZIndex = 52
-CloseButton.ZIndex = 60
-MinimizeButton.ZIndex = 60

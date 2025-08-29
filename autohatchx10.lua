@@ -108,7 +108,7 @@ local coroutineLoop
 --// Function to run the loop
 local function DrawHeroFunction()
     local args = {
-        7000033,
+        7000038,
         10
     }
     game:GetService("ReplicatedStorage"):WaitForChild("Tool"):WaitForChild("DrawUp"):WaitForChild("Msg"):WaitForChild("DrawHero"):InvokeServer(unpack(args))

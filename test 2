@@ -15,6 +15,7 @@ frame.Position = UDim2.new(0.5, -175, 0.5, -175)
 frame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
 frame.BorderSizePixel = 0
 frame.Active = true
+frame.Draggable = true
 frame.ClipsDescendants = true
 frame.Parent = gui
 

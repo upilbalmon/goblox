@@ -37,10 +37,8 @@ local CloseButton     = Instance.new("TextButton")
 local MinimizeButton  = Instance.new("TextButton")
 local BookmarkBox     = Instance.new("TextBox")
 local SaveButton      = Instance.new("TextButton")
-local BookmarkScroller = Instance.new("ScrollingFrame")
-local BookmarkLayout  = Instance.new("UIListLayout")
-local ExportButton    = Instance.new("TextButton")
-local ImportButton    = Instance.new("TextButton")
+local BookmarkList    = Instance.new("Frame")
+local Layout          = Instance.new("UIListLayout")
 
 local isMinimized     = false
 local originalPositionVec3 = nil
@@ -60,7 +58,7 @@ end
 -- ==== Main frame ====
 Frame.Name = "MainFrame"
 Frame.Parent = ScreenGui
-Frame.Size = UDim2.new(0, 240, 0, 380) -- Diperbesar untuk tombol baru
+Frame.Size = UDim2.new(0, 240, 0, 340)
 Frame.Position = UDim2.new(0, 10, 0, 10)
 Frame.BackgroundTransparency = 0.4  -- sesuai preferensi transparansi frame
 Frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
@@ -157,43 +155,16 @@ SaveButton.Position = UDim2.new(0, 170, 0, 108)
 SaveButton.Size = UDim2.new(0, 60, 0, 28)
 styleBlueButton(SaveButton)
 
--- ==== Tombol Export/Import ====
-ExportButton.Parent = Frame
-ExportButton.Text = "Export"
-ExportButton.Position = UDim2.new(0, 10, 0, 144)
-ExportButton.Size = UDim2.new(0, 105, 0, 28)
-ExportButton.BackgroundColor3 = Color3.fromRGB(0, 180, 0) -- hijau
-ExportButton.BackgroundTransparency = 0.4
-ExportButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-ExportButton.BorderSizePixel = 0
+-- Daftar bookmark
+BookmarkList.Parent = Frame
+BookmarkList.Position = UDim2.new(0, 10, 0, 144)
+BookmarkList.Size = UDim2.new(0, 220, 0, 186)
+BookmarkList.BackgroundTransparency = 0.5
+BookmarkList.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 
-ImportButton.Parent = Frame
-ImportButton.Text = "Import"
-ImportButton.Position = UDim2.new(0, 125, 0, 144)
-ImportButton.Size = UDim2.new(0, 105, 0, 28)
-ImportButton.BackgroundColor3 = Color3.fromRGB(180, 180, 0) -- kuning
-ImportButton.BackgroundTransparency = 0.4
-ImportButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-ImportButton.BorderSizePixel = 0
-
--- ==== Scrolling Frame untuk Bookmark ====
-BookmarkScroller.Parent = Frame
-BookmarkScroller.Position = UDim2.new(0, 10, 0, 180)
-BookmarkScroller.Size = UDim2.new(0, 220, 0, 146)
-BookmarkScroller.BackgroundTransparency = 0.5
-BookmarkScroller.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-BookmarkScroller.BorderSizePixel = 0
-BookmarkScroller.ScrollBarThickness = 6
-BookmarkScroller.CanvasSize = UDim2.new(0, 0, 0, 0)
-
-BookmarkLayout.Parent = BookmarkScroller
-BookmarkLayout.SortOrder = Enum.SortOrder.LayoutOrder
-BookmarkLayout.Padding = UDim.new(0, 4)
-
--- Update canvas size ketika layout berubah
-BookmarkLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-    BookmarkScroller.CanvasSize = UDim2.new(0, 0, 0, BookmarkLayout.AbsoluteContentSize.Y)
-end)
+Layout.Parent = BookmarkList
+Layout.SortOrder = Enum.SortOrder.LayoutOrder
+Layout.Padding = UDim.new(0, 4)
 
 -- ==== Minimize logic ====
 originalFrameSize = Frame.Size
@@ -238,115 +209,6 @@ local function getCharacter()
     return character
 end
 
--- ==== Fungsi untuk membuat item bookmark ====
-local function createBookmarkItem(name, coords)
-    local BookmarkItem = Instance.new("Frame")
-    BookmarkItem.Name = "BookmarkItem"
-    BookmarkItem.Size = UDim2.new(1, 0, 0, 26)
-    BookmarkItem.BackgroundTransparency = 1
-    BookmarkItem.LayoutOrder = #BookmarkScroller:GetChildren()
-
-    local TeleportButton = Instance.new("TextButton")
-    TeleportButton.Name = "TeleportBtn"
-    TeleportButton.Size = UDim2.new(0.7, 0, 1, 0)
-    TeleportButton.Position = UDim2.new(0, 0, 0, 0)
-    TeleportButton.Text = name
-    TeleportButton.BackgroundTransparency = 0.4
-    TeleportButton.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
-    TeleportButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    TeleportButton.BorderSizePixel = 0
-    TeleportButton.Parent = BookmarkItem
-
-    local DeleteButton = Instance.new("TextButton")
-    DeleteButton.Name = "DeleteBtn"
-    DeleteButton.Size = UDim2.new(0.3, 0, 1, 0)
-    DeleteButton.Position = UDim2.new(0.7, 0, 0, 0)
-    DeleteButton.Text = "Hapus"
-    DeleteButton.BackgroundTransparency = 0.4
-    DeleteButton.BackgroundColor3 = Color3.fromRGB(220, 0, 0)
-    DeleteButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    DeleteButton.BorderSizePixel = 0
-    DeleteButton.Parent = BookmarkItem
-
-    -- Fungsi teleport
-    TeleportButton.MouseButton1Click:Connect(function()
-        local character = getCharacter()
-        if character and character.PrimaryPart then
-            character:SetPrimaryPartCFrame(CFrame.new(coords))
-        end
-        local formatted = string.format("%d,%d,%d", math.floor(coords.X), math.floor(coords.Y), math.floor(coords.Z))
-        XBox.Text = formatted
-        if setclipboard then 
-            setclipboard(formatted) 
-        end
-    end)
-
-    -- Fungsi hapus bookmark
-    DeleteButton.MouseButton1Click:Connect(function()
-        bookmarks[name] = nil
-        BookmarkItem:Destroy()
-    end)
-
-    BookmarkItem.Parent = BookmarkScroller
-    return BookmarkItem
-end
-
--- ==== Fungsi Export Bookmark ====
-local function exportBookmarksToClipboard()
-    if not setclipboard then return end
-    
-    local exportText = "-- Bookmark Export\nlocal bookmarks = {\n"
-    
-    for name, coords in pairs(bookmarks) do
-        exportText = exportText .. string.format('    ["%s"] = Vector3.new(%d, %d, %d),\n', 
-            name, math.floor(coords.X), math.floor(coords.Y), math.floor(coords.Z))
-    end
-    
-    exportText = exportText .. "}\n\n-- Paste this into Import field to load bookmarks"
-    
-    setclipboard(exportText)
-    print("Bookmarks exported to clipboard!")
-end
-
--- ==== Fungsi Import Bookmark ====
-local function importBookmarksFromClipboard()
-    if not getclipboard then return end
-    
-    local clipboardText = getclipboard()
-    if not clipboardText or clipboardText == "" then
-        print("Clipboard is empty!")
-        return
-    end
-    
-    -- Coba ekstrak data dari format export
-    local success, result = pcall(function()
-        -- Cari semua pola ["nama"] = Vector3.new(x, y, z),
-        for name, x, y, z in string.gmatch(clipboardText, '%["([^"]+)"%]%s*=%s*Vector3%.new%((%-?%d+),%s*(%-?%d+),%s*(%-?%d+)%)') do
-            local vec = Vector3.new(tonumber(x), tonumber(y), tonumber(z))
-            if name and vec then
-                bookmarks[name] = vec
-                -- Hapus item lama jika ada
-                for _, item in ipairs(BookmarkScroller:GetChildren()) do
-                    if item:IsA("Frame") and item:FindFirstChild("TeleportBtn") then
-                        if item.TeleportBtn.Text == name then
-                            item:Destroy()
-                            break
-                        end
-                    end
-                end
-                -- Buat item baru
-                createBookmarkItem(name, vec)
-            end
-        end
-    end)
-    
-    if not success then
-        print("Failed to import bookmarks: Invalid format")
-    else
-        print("Bookmarks imported successfully!")
-    end
-end
-
 -- ==== Actions ====
 TeleportButton.MouseButton1Click:Connect(function()
     local coords = parseCoordinates(XBox.Text)
@@ -382,30 +244,28 @@ SaveButton.MouseButton1Click:Connect(function()
     local name = (BookmarkBox.Text or ""):gsub("^%s+", ""):gsub("%s+$", "")
     local coords = parseCoordinates(XBox.Text)
     if name ~= "" and coords then
-        -- Cek apakah nama bookmark sudah ada
-        if bookmarks[name] then
-            -- Update bookmark yang sudah ada
-            bookmarks[name] = coords
-            -- Cari dan update item yang sesuai
-            for _, item in ipairs(BookmarkScroller:GetChildren()) do
-                if item:IsA("Frame") and item:FindFirstChild("TeleportBtn") then
-                    if item.TeleportBtn.Text == name then
-                        -- Hanya update data, UI tetap sama
-                        break
-                    end
-                end
+        bookmarks[name] = coords
+
+        local b = Instance.new("TextButton")
+        b.Text = name
+        b.Size = UDim2.new(1, 0, 0, 26)
+        b.BackgroundTransparency = 0.4
+        b.BackgroundColor3 = Color3.fromRGB(0, 120, 255) -- tombol biru agar konsisten
+        b.TextColor3 = Color3.fromRGB(255,255,255)
+        b.BorderSizePixel = 0
+        b.Parent = BookmarkList
+
+        b.MouseButton1Click:Connect(function()
+            local character = getCharacter()
+            if character and character.PrimaryPart then
+                character:SetPrimaryPartCFrame(CFrame.new(coords))
             end
-        else
-            -- Buat bookmark baru
-            bookmarks[name] = coords
-            createBookmarkItem(name, coords)
-        end
-        
+            local formatted = string.format("%d,%d,%d", math.floor(coords.X), math.floor(coords.Y), math.floor(coords.Z))
+            XBox.Text = formatted
+            if setclipboard then setclipboard(formatted) end
+        end)
+
         BookmarkBox.Text = ""
         XBox.Text = ""
     end
 end)
-
--- ==== Export/Import Actions ====
-ExportButton.MouseButton1Click:Connect(exportBookmarksToClipboard)
-ImportButton.Mouse

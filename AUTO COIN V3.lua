@@ -7,6 +7,7 @@
     4. All original functionality preserved
     5. Auto token delay formula: (10000/speed) with 1 decimal place
     6. Max height limit: 14400
+    7. Lock delay setting checkbox
 --]]
 
 ------ SERVICES ------
@@ -43,7 +44,8 @@ local State = {
     climbing = false,
     climbStartY = 0,
     climbStartTime = 0,
-    maxY = 0
+    maxY = 0,
+    lockDelay = false  -- New state for lock delay
 }
 
 ------ UTILITY FUNCTIONS ------
@@ -218,10 +220,39 @@ local function CreateGUI()
     DelayCorner.CornerRadius = UDim.new(0, 4)
     DelayCorner.Parent = DelayBox
 
+    -- Lock Delay Checkbox
+    local LockDelayFrame = Instance.new("Frame")
+    LockDelayFrame.Size = UDim2.new(1, 0, 0, 15)
+    LockDelayFrame.Position = UDim2.new(0, 0, 0, 50)
+    LockDelayFrame.BackgroundTransparency = 1
+    LockDelayFrame.Parent = InputFrame
+
+    local LockDelayBox = Instance.new("TextButton")
+    LockDelayBox.Size = UDim2.new(0, 15, 0, 15)
+    LockDelayBox.Position = UDim2.new(0, 0, 0, 0)
+    LockDelayBox.Text = ""
+    LockDelayBox.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
+    LockDelayBox.Parent = LockDelayFrame
+
+    local LockDelayCorner = Instance.new("UICorner")
+    LockDelayCorner.CornerRadius = UDim.new(0, 3)
+    LockDelayCorner.Parent = LockDelayBox
+
+    local LockDelayLabel = Instance.new("TextLabel")
+    LockDelayLabel.Size = UDim2.new(1, -20, 1, 0)
+    LockDelayLabel.Position = UDim2.new(0, 20, 0, 0)
+    LockDelayLabel.Text = "Lock Delay Setting"
+    LockDelayLabel.TextColor3 = Color3.new(1, 1, 1)
+    LockDelayLabel.BackgroundTransparency = 1
+    LockDelayLabel.Font = Enum.Font.Gotham
+    LockDelayLabel.TextSize = 10
+    LockDelayLabel.TextXAlignment = Enum.TextXAlignment.Left
+    LockDelayLabel.Parent = LockDelayFrame
+
     -- Status Indicator
     local StatusLabel = Instance.new("TextLabel")
     StatusLabel.Size = UDim2.new(1, 0, 0, 15)
-    StatusLabel.Position = UDim2.new(0, 0, 0, 55)
+    StatusLabel.Position = UDim2.new(0, 0, 0, 70)
     StatusLabel.Text = "Coin[○] Win[○] Token[○]"
     StatusLabel.TextColor3 = Color3.new(1, 1, 1)
     StatusLabel.BackgroundTransparency = 1
@@ -233,7 +264,7 @@ local function CreateGUI()
     -- Speed Indicator
     local SpeedLabel = Instance.new("TextLabel")
     SpeedLabel.Size = UDim2.new(1, 0, 0, 15)
-    SpeedLabel.Position = UDim2.new(0, 0, 0, 70)
+    SpeedLabel.Position = UDim2.new(0, 0, 0, 85)
     SpeedLabel.Text = "Speed: 0 studs/s"
     SpeedLabel.TextColor3 = Color3.new(1, 1, 1)
     SpeedLabel.BackgroundTransparency = 1
@@ -245,7 +276,7 @@ local function CreateGUI()
     -- Main Button
     local MainButton = Instance.new("TextButton")
     MainButton.Size = UDim2.new(1, 0, 0, 30)
-    MainButton.Position = UDim2.new(0, 0, 0, 90)
+    MainButton.Position = UDim2.new(0, 0, 0, 105)
     MainButton.Text = "START AUTO COIN"
     MainButton.Font = Enum.Font.GothamBold
     MainButton.TextSize = 12
@@ -260,7 +291,7 @@ local function CreateGUI()
     -- Toggle Buttons Frame
     local ToggleFrame = Instance.new("Frame")
     ToggleFrame.Size = UDim2.new(1, 0, 0, 25)
-    ToggleFrame.Position = UDim2.new(0, 0, 0, 125)
+    ToggleFrame.Position = UDim2.new(0, 0, 0, 140)
     ToggleFrame.BackgroundTransparency = 1
     ToggleFrame.Parent = Content
 
@@ -297,7 +328,7 @@ local function CreateGUI()
     -- Status Message
     local StatusMessage = Instance.new("TextLabel")
     StatusMessage.Size = UDim2.new(1, 0, 0, 15)
-    StatusMessage.Position = UDim2.new(0, 0, 0, 155)
+    StatusMessage.Position = UDim2.new(0, 0, 0, 170)
     StatusMessage.Text = "JUMP FROM TOWER FIRST"
     StatusMessage.TextColor3 = Color3.fromRGB(255, 100, 100)
     StatusMessage.BackgroundTransparency = 1
@@ -320,7 +351,9 @@ local function CreateGUI()
         AutoTokenToggle = TokenButton,
         StatusMessage = StatusMessage,
         MinimizeButton = MinimizeButton,
-        CloseButton = CloseButton
+        CloseButton = CloseButton,
+        LockDelayCheckbox = LockDelayBox,
+        LockDelayLabel = LockDelayLabel
     }
 end
 
@@ -381,8 +414,8 @@ local function RunLoop()
     while State.running and State.hookEnabled do
         local internalDelay = tonumber(GUI.DelayTextBox.Text) or DEFAULT_DELAY
         
-        -- Apply auto token delay formula when enabled
-        if State.autoTokenEnabled and State.climbSpeed > 0 then
+        -- Apply auto token delay formula when enabled (only if delay is not locked)
+        if State.autoTokenEnabled and State.climbSpeed > 0 and not State.lockDelay then
             internalDelay = math.floor((10000 / State.climbSpeed) * 10) / 10
             GUI.DelayTextBox.Text = string.format("%.1f", internalDelay)
         end
@@ -465,7 +498,17 @@ local function SetupCharacter(char)
                 if totalY > 0 and totalTime > 0 then
                     State.climbSpeed = totalY / totalTime
                     GUI.SpeedLabel.Text = string.format("Speed: %.2f studs/s", State.climbSpeed)
-                    UpdateHeight()
+                    
+                    -- Update height and delay only if not locked
+                    if not State.lockDelay then
+                        UpdateHeight()
+                        
+                        -- Update delay if auto token is enabled
+                        if State.autoTokenEnabled then
+                            local newDelay = math.floor((10000 / State.climbSpeed) * 10) / 10
+                            GUI.DelayTextBox.Text = string.format("%.1f", newDelay)
+                        end
+                    end
                     
                     -- Show updated win delay if auto win is enabled
                     if State.autoWinEnabled then
@@ -474,12 +517,6 @@ local function SetupCharacter(char)
                         if State.running then
                             GUI.StatusMessage.Text = "RUNNING..."
                         end
-                    end
-                    
-                    -- Update delay if auto token is enabled
-                    if State.autoTokenEnabled then
-                        local newDelay = math.floor((10000 / State.climbSpeed) * 10) / 10
-                        GUI.DelayTextBox.Text = string.format("%.1f", newDelay)
                     end
                 end
                 State.climbing = false
@@ -546,8 +583,8 @@ local function InitializeEventHandlers()
             if State.autoTokenEnabled then
                 GUI.AutoTokenToggle.Text = "TOKEN: ON"
                 GUI.AutoTokenToggle.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-                -- Update delay immediately when toggled on
-                if State.climbSpeed > 0 then
+                -- Update delay immediately when toggled on (only if not locked)
+                if State.climbSpeed > 0 and not State.lockDelay then
                     local newDelay = math.floor((10000 / State.climbSpeed) * 10) / 10
                     GUI.DelayTextBox.Text = string.format("%.1f", newDelay)
                 end
@@ -558,9 +595,39 @@ local function InitializeEventHandlers()
         end
     end)
 
-    -- Delay box change handler
+    -- Lock Delay Checkbox
+    GUI.LockDelayCheckbox.MouseButton1Click:Connect(function()
+        State.lockDelay = not State.lockDelay
+        if State.lockDelay then
+            GUI.LockDelayCheckbox.BackgroundColor3 = Color3.fromRGB(100, 200, 100)
+            GUI.DelayTextBox.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
+            GUI.DelayTextBox.TextEditable = false
+            GUI.StatusMessage.Text = "DELAY LOCKED"
+            GUI.StatusMessage.TextColor3 = Color3.fromRGB(100, 255, 100)
+            task.wait(1.5)
+            if State.running then
+                GUI.StatusMessage.Text = "RUNNING..."
+            else
+                UpdateStatus()
+            end
+        else
+            GUI.LockDelayCheckbox.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
+            GUI.DelayTextBox.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+            GUI.DelayTextBox.TextEditable = true
+            GUI.StatusMessage.Text = "DELAY UNLOCKED"
+            GUI.StatusMessage.TextColor3 = Color3.fromRGB(100, 255, 100)
+            task.wait(1.5)
+            if State.running then
+                GUI.StatusMessage.Text = "RUNNING..."
+            else
+                UpdateStatus()
+            end
+        end
+    end)
+
+    -- Delay box change handler (only if not locked)
     GUI.DelayTextBox:GetPropertyChangedSignal("Text"):Connect(function()
-        if State.climbSpeed > 0 then
+        if State.climbSpeed > 0 and not State.lockDelay then
             UpdateHeight()
         end
     end)
